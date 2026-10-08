@@ -548,7 +548,7 @@ class SP1Importer:
         self.dialog = None
 
     def initGui(self):
-        icon = os.path.join(plugin_dir, 'logo.png')
+        icon = os.path.join(plugin_dir, 'icon.png')
         self.action = QAction(QIcon(icon), 'SP1 Importer', self.iface.mainWindow())
         self.action.triggered.connect(self.run)
         self.iface.addToolBarIcon(self.action)

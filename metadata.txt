@@ -5,4 +5,4 @@ qgisMinimumVersion=3.0
 supportsQt6=True
 author=Claire Richardson
 email=crricha5@asu.edu
-icon=logo.png
+icon=icon.png
