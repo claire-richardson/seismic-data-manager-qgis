@@ -436,15 +436,13 @@ class SP1ImporterDialog(QMainWindow):
     def save_new_file(self):
         fout = QFileDialog.getSaveFileName(self, "Save File", "", "SP1 files (*.sp1);;All Files (*)")
         
-        if not fout:
+        output_file_path = fout[0]
+        if not output_file_path:
             return
         
         else:
-            # grab the string of the entire output file path
-            output_file_path = fout[0]
-            simple_path = output_file_path.split('.')[0]
-            simple_file_name = f'{simple_path}'.split('/')[-1]
-            output_file_path_csv = f'{simple_path}.csv'
+            output_file_stem, _ = os.path.splitext(output_file_path)
+            output_file_path_csv = f'{output_file_stem}.csv'
             
             # print it in the "output file" text edit line
             self.output_line.setText(output_file_path)
@@ -464,7 +462,7 @@ class SP1ImporterDialog(QMainWindow):
                 csv_data_list_all.append(parsed_headers)
 
                 # start looping through the attribute table, row by row
-                for row in range(5): #range(self.data_attribute_table.rowCount()): # UPDATE
+                for row in range(self.data_attribute_table.rowCount()):
                     # for each row, make an empty list of exactly 80 characters, that will be joined as a string and written to the output file
                     data_list = []
                     for i in range(0,80):
@@ -476,7 +474,8 @@ class SP1ImporterDialog(QMainWindow):
                     # now, loop through each column and get the data
                     for parsed_header_idx in range(len(parsed_headers)):
                         parsed_header = parsed_headers[parsed_header_idx]  # get header name
-                        item_value = self.data_attribute_table.item(row, parsed_header_idx).text()  # get item value for the current row and header
+                        item = self.data_attribute_table.item(row, parsed_header_idx)
+                        item_value = item.text() if item is not None else ''
                         start_idx = seg_header_specs[parsed_header][0] - 1  # get the starting index from the SEG specs dictionary
                         end_idx = seg_header_specs[parsed_header][1] - 1  # get the ending index from the SEG specs dictionary
                         entry_length = (end_idx - start_idx) + 1
