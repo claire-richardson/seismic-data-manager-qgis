@@ -102,6 +102,8 @@ class SP1ImporterDialog(QMainWindow):
         self.data_parser_label = QLabel("Use this table and the text boxes below to provide the column numbers that delineate the data that belong to each header, according to the following:\n  -  For each header, you will need to identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n  -  If the values for a given header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\nNote that not all headers need to be used, however those provided in the dropdown box are the headers listed in the SEG Specification. Besides the introductory/primary header content, which is handled in the top left box above, only the information passed through the parser is retained and used to make the final outputs. Anything unassigned (e.g., whitespace) will be ignored.")
         self.data_parser_label.setWordWrap(True)
         self.data_parser_label.setStyleSheet("font-size: 14px;")
+        ## Widget: Push buttons for autoparse
+        self.autoparse_button = QPushButton("Auto parse", self)
         ## Widget: Table for parsing input
         self.data_parser_table = QTableWidget()
         ## Widget: Push button to parse and regenerate parse preview
@@ -152,6 +154,10 @@ class SP1ImporterDialog(QMainWindow):
         ## signal for when the remove column button is pushed (activate method/slot .remove_column)
         self.remove_column_button.clicked.connect(self.remove_column)
 
+        ## signal for when the autoparse button is pushed (activate method/slot .autoparse)
+        self.autoparse_button.clicked.connect(self.autoparse)
+
+        ## signal for when the add map layer button is pushed (adds a map layer to the QGIS project (activate method/slot .add_map_layer))
         self.plotting_button.clicked.connect(self.add_map_layer)
 
         ## signal for when the save file button is pushed (activate method/slot .)
@@ -217,6 +223,7 @@ class SP1ImporterDialog(QMainWindow):
         frame_parse_table_layout.addWidget(self.data_parser_title)
         frame_parse_table_layout.addWidget(self.data_parser_label)
         frame_parse_table_layout.addWidget(self.data_parser_table)
+        frame_parse_table_layout.addWidget(self.autoparse_button)
         self.frame_parse_table.setLayout(frame_parse_table_layout)
         main_layout.addWidget(self.frame_parse_table)
         
@@ -337,7 +344,11 @@ class SP1ImporterDialog(QMainWindow):
                 
         else:
             return
-                        
+
+    def autoparse(self):
+        return
+        
+    
     def parse_data(self):
         dec = False
         drop = False
