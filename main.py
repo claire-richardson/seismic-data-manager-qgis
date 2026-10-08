@@ -1,9 +1,16 @@
 import os
 import csv
 
-from qgis.core import QgsRasterLayer, QgsProject, QgsCoordinateReferenceSystem
+from qgis.core import (QgsCoordinateReferenceSystem,
+                       QgsCoordinateTransform,
+                       QgsFeature,
+                       QgsField,
+                       QgsGeometry,
+                       QgsPointXY,
+                       QgsProject,
+                       QgsVectorLayer)
 from qgis.PyQt.QtGui import QIcon, QFont
-from qgis.PyQt.QtCore import Qt, QSize
+from qgis.PyQt.QtCore import Qt, QSize, QMetaType
 from qgis.PyQt.QtWidgets import (QAction,
                                  QMainWindow,
                                  QPushButton,
@@ -19,7 +26,8 @@ from qgis.PyQt.QtWidgets import (QAction,
                                  QScrollArea,
                                  QTableWidgetItem,
                                  QComboBox,
-                                 QCheckBox
+                                 QCheckBox,
+                                 QMessageBox
                                 )
 
 plugin_dir = os.path.dirname(__file__)
@@ -126,6 +134,8 @@ class SP1ImporterDialog(QMainWindow):
         self.data_attribute_table = QTableWidget()
         ## Widget: button to remove a column if needed:
         self.remove_column_button = QPushButton("Remove column", self)
+        ## Widget: Button for plotting
+        self.plotting_button = QPushButton("Add map layer", self)
         
         
         
@@ -141,6 +151,8 @@ class SP1ImporterDialog(QMainWindow):
         
         ## signal for when the remove column button is pushed (activate method/slot .remove_column)
         self.remove_column_button.clicked.connect(self.remove_column)
+
+        self.plotting_button.clicked.connect(self.add_map_layer)
 
         ## signal for when the save file button is pushed (activate method/slot .)
         self.output_button.clicked.connect(self.save_new_file)
@@ -252,6 +264,7 @@ class SP1ImporterDialog(QMainWindow):
         frame_attribute_table_layout.addWidget(self.data_attribute_table_title)
         frame_attribute_table_layout.addWidget(self.data_attribute_table)
         frame_attribute_table_layout.addWidget(self.remove_column_button, alignment = Qt.AlignLeft)
+        frame_attribute_table_layout.addWidget(self.plotting_button, alignment = Qt.AlignLeft)
         self.frame_attribute_table.setLayout(frame_attribute_table_layout)
         main_layout.addWidget(self.frame_attribute_table)
         
@@ -431,7 +444,73 @@ class SP1ImporterDialog(QMainWindow):
     def remove_column(self):
         self.data_attribute_table.removeColumn(self.data_attribute_table.currentColumn())
 
-        
+
+    def add_map_layer(self):
+        table = self.data_attribute_table
+        project = QgsProject.instance()
+        layer_crs = project.crs()
+        if not layer_crs.isValid():
+            QMessageBox.warning(self, "Cannot add map layer", "Set a valid project CRS before plotting positions.")
+            return
+
+        column_names = []
+        for column in range(table.columnCount()):
+            header = table.horizontalHeaderItem(column)
+            if header is None or not header.text().strip():
+                QMessageBox.warning(self, "Cannot add map layer", "Every attribute column must have a header.")
+                return
+            column_names.append(header.text())
+
+        column_indices = {name: index for index, name in enumerate(column_names)}
+        if {'Latitude', 'Longitude'}.issubset(column_indices):
+            x_index = column_indices['Longitude']
+            y_index = column_indices['Latitude']
+            coordinate_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        else:
+            QMessageBox.warning(
+                self,
+                "Cannot add map layer",
+                "The attribute table must contain Latitude and Longitude columns."
+            )
+            return
+
+        layer = QgsVectorLayer("Point", "SP1 positions", "memory")
+        layer.setCrs(layer_crs)
+        provider = layer.dataProvider()
+        provider.addAttributes([QgsField(name, QMetaType.Type.QString) for name in column_names])
+        layer.updateFields()
+        coordinate_transform = QgsCoordinateTransform(coordinate_crs, layer_crs, project)
+
+        features = []
+        for row in range(table.rowCount()):
+            values = []
+            for column in range(table.columnCount()):
+                item = table.item(row, column)
+                values.append(item.text().strip() if item is not None else "")
+
+            try:
+                x = float(values[x_index])
+                y = float(values[y_index])
+            except ValueError:
+                continue
+
+            if coordinate_crs.authid() == "EPSG:4326" and not (-180 <= x <= 180 and -90 <= y <= 90):
+                continue
+
+            feature = QgsFeature(layer.fields())
+            point = coordinate_transform.transform(QgsPointXY(x, y))
+            feature.setGeometry(QgsGeometry.fromPointXY(point))
+            feature.setAttributes(values)
+            features.append(feature)
+
+        if not features:
+            QMessageBox.warning(self, "Cannot add map layer", "No rows contain valid coordinates.")
+            return
+
+        provider.addFeatures(features)
+        layer.updateExtents()
+        project.addMapLayer(layer)
+
         
     def save_new_file(self):
         fout = QFileDialog.getSaveFileName(self, "Save File", "", "SP1 files (*.sp1);;All Files (*)")
@@ -538,7 +617,6 @@ class SP1ImporterDialog(QMainWindow):
                     writer = csv.writer(output_file_csv)
                     for csv_data_row in csv_data_list_all:
                         writer.writerow(csv_data_row)
-
 
 class SP1Importer:
     def __init__(self, iface):
