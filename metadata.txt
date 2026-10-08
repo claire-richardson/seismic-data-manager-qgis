@@ -1,5 +1,6 @@
+[general]
 name=SP1 Importer
-description=This plugin imports, parses, plots, and exports seismic positioning files according to SEG Specifications for SP1 (*.sp1) files. It supports imported files in any format.
+description=This plugin imports, parses, plots, and exports seismic position data files according to the SEG SP1 (*.sp1) specifications
 version=1.0
 qgisMinimumVersion=3.0
 supportsQt6=True
