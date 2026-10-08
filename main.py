@@ -1,40 +1,42 @@
-import sys
+import os
 import csv
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import (QApplication,
-                             QMainWindow,
-                             QPushButton,
-                             QLabel,
-                             QFrame,
-                             QFileDialog,
-                             QWidget,
-                             QVBoxLayout,
-                             QHBoxLayout,
-                             QLineEdit,
-                             QTextEdit,
-                             QTableWidget,
-                             QScrollArea,
-                             QTableWidgetItem,
-                             QComboBox,
-                             QCheckBox
-                            )
 
-# Define the main window for the application
-class MainWindow(QMainWindow):
+from qgis.core import QgsRasterLayer, QgsProject, QgsCoordinateReferenceSystem
+from qgis.PyQt.QtGui import QIcon, QFont
+from qgis.PyQt.QtCore import Qt, QSize
+from qgis.PyQt.QtWidgets import (QAction,
+                                 QMainWindow,
+                                 QPushButton,
+                                 QLabel,
+                                 QFrame,
+                                 QFileDialog,
+                                 QWidget,
+                                 QVBoxLayout,
+                                 QHBoxLayout,
+                                 QLineEdit,
+                                 QTextEdit,
+                                 QTableWidget,
+                                 QScrollArea,
+                                 QTableWidgetItem,
+                                 QComboBox,
+                                 QCheckBox
+                                )
+
+plugin_dir = os.path.dirname(__file__)
+
+# Define the plugin's main window
+class SP1ImporterDialog(QMainWindow):
     
     # Define the constructor.
     ## Call the parent QMainWindow class, set its initial attributes.
-    def __init__(self):
-        super().__init__()
-        # set attributes for the main window, call UI initializer
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("SP1 Importer")
-        self.initUI()
-        # self.setFont(QFont('monospace'))
+        self.initGui()
 
     # Define the UI initializer
     ## Add widgets here and define their initial attributes
-    def initUI(self):
+    def initGui(self):
         #############
         # ADD WIDGETS
         #############
@@ -538,6 +540,34 @@ class MainWindow(QMainWindow):
                     for csv_data_row in csv_data_list_all:
                         writer.writerow(csv_data_row)
 
+
+class SP1Importer:
+    def __init__(self, iface):
+        self.iface = iface
+        self.action = None
+        self.dialog = None
+
+    def initGui(self):
+        icon = os.path.join(plugin_dir, 'logo.png')
+        self.action = QAction(QIcon(icon), 'SP1 Importer', self.iface.mainWindow())
+        self.action.triggered.connect(self.run)
+        self.iface.addToolBarIcon(self.action)
+
+    def unload(self):
+        if self.action is not None:
+            self.iface.removeToolBarIcon(self.action)
+            self.action = None
+        if self.dialog is not None:
+            self.dialog.close()
+            self.dialog = None
+
+    def run(self, checked=False):
+        if self.dialog is None:
+            self.dialog = SP1ImporterDialog(self.iface.mainWindow())
+        self.dialog.show()
+        self.dialog.raise_()
+        self.dialog.activateWindow()
+
 seg_header_specs = {
     'Line name': [2, 17],
     'Shotpoint ID': [18, 25],
@@ -553,9 +583,3 @@ seg_header_specs = {
     'Minutes': [74, 75],
     'Seconds': [76, 77]
 }
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
