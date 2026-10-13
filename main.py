@@ -9,10 +9,9 @@ from qgis.core import (QgsCoordinateReferenceSystem,
                        QgsPointXY,
                        QgsProject,
                        QgsVectorLayer)
-from qgis.PyQt.QtGui import QIcon, QFont
-from qgis.PyQt.QtCore import Qt, QSize, QMetaType
-from qgis.PyQt.QtWidgets import (QAction,
-                                 QMainWindow,
+from qgis.PyQt.QtGui import QAction, QIcon, QFont
+from qgis.PyQt.QtCore import Qt, QMetaType
+from qgis.PyQt.QtWidgets import (QMainWindow,
                                  QPushButton,
                                  QLabel,
                                  QFrame,
@@ -267,11 +266,11 @@ class SP1ImporterDialog(QMainWindow):
         # frame_attribute_table holds attribute table
         self.frame_attribute_table = QFrame(self)
         frame_attribute_table_layout = QVBoxLayout()
-        frame_attribute_table_layout.addWidget(self.data_parser_button, alignment = Qt.AlignLeft)
+        frame_attribute_table_layout.addWidget(self.data_parser_button, alignment=Qt.AlignmentFlag.AlignLeft)
         frame_attribute_table_layout.addWidget(self.data_attribute_table_title)
         frame_attribute_table_layout.addWidget(self.data_attribute_table)
-        frame_attribute_table_layout.addWidget(self.remove_column_button, alignment = Qt.AlignLeft)
-        frame_attribute_table_layout.addWidget(self.plotting_button, alignment = Qt.AlignLeft)
+        frame_attribute_table_layout.addWidget(self.remove_column_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        frame_attribute_table_layout.addWidget(self.plotting_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self.frame_attribute_table.setLayout(frame_attribute_table_layout)
         main_layout.addWidget(self.frame_attribute_table)
         
