@@ -98,34 +98,60 @@ class SP1ImporterDialog(QMainWindow):
         ## Widget: Label for the data parser section
         self.data_parser_title = QLabel("Data parser:")
         self.data_parser_title.setStyleSheet("font-weight: bold; font-size: 16px;")
-        self.data_parser_label = QLabel("Use this table and the text boxes below to provide the column numbers that delineate the data that belong to each header, according to the following:\n  -  For each header, you will need to identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n  -  If the values for a given header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\nNote that not all headers need to be used, however those provided in the dropdown box are the headers listed in the SEG Specification. Besides the introductory/primary header content, which is handled in the top left box above, only the information passed through the parser is retained and used to make the final outputs. Anything unassigned (e.g., whitespace) will be ignored.")
+        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the headers listed in the desired SEG specification." \
+        "Use the auto-parse dropdown menu and button to select the specification and automatically assign headers and columns." \
+        "If an automatically assigned column is incorrect in the attribute table, or includes an implicit decimal point, remove it using the `remove column` button and assign it manually using the text boxes below. If a header is empty/unnecessary, it can be removed the same way.\n\n" \
+        "To manually assign a header and corresponding data:\n" \
+        "-  For a given header, identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n"
+        "-  If the values for a given header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\n\n" \
+        "Note that not all headers in the dropdown need to be used. The included headers are those listed in the supported SEG specifications. Besides the introductory/primary header content, which is handled in the top left box above, only the information passed through the parser is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored, and the order of the headers in the attribute table does not need to correspond to the order in the specification.")
         self.data_parser_label.setWordWrap(True)
         self.data_parser_label.setStyleSheet("font-size: 14px;")
-        ## Widget: Push buttons for autoparse
-        self.autoparse_button = QPushButton("Auto parse", self)
         ## Widget: Table for parsing input
         self.data_parser_table = QTableWidget()
-        ## Widget: Push button to parse and regenerate parse preview
-        self.data_parser_button = QPushButton("Add header and data", self)
-        
-        # Data parser headers
+
+        # data parser controls:
+        # Auto-parse controls
+        ## Widget: Dropdown for SEG Specs
+        ## Widget: Label for the auto parser
+        self.auto_parser_title = QLabel("Auto parse:")
+        self.auto_parser_title.setStyleSheet("font-size: 14px; text-decoration: underline;")
+        self.seg_spec_dropdown_label = QLabel("SEG file type:")
+        self.seg_spec_dropdown_label.setStyleSheet("font-size: 14px;")
+        self.seg_spec_dropdown = QComboBox()
+        self.seg_spec_dropdown.addItems(list(seg_header_specs))
+        ## Widget: Push buttons for autoparse
+        self.autoparse_button = QPushButton("Auto-parse", self)
+        #
+        # Manual parse controls
+        ## Widget: Label for the manual parser
+        self.manual_parser_title = QLabel("Manual parse:")
+        self.manual_parser_title.setStyleSheet("font-size: 14px; text-decoration: underline;")
+        ## Widget: Header dropdown:
         self.data_parser_headers_label = QLabel("Header:")
         self.data_parser_headers_label.setStyleSheet("font-size: 14px;")
         self.data_parser_headers = QComboBox()
-        self.data_parser_headers.addItems(list(seg_header_specs))
-        #
+        # self.data_parser_headers.addItems(list(seg_header_specs[self.seg_spec_dropdown.currentText()]))
+        self.data_parser_headers.addItems(list(seg_header_specs['SP1']))
+        ## Widget: Start column text box
         self.data_parser_headers_start_label = QLabel("Start column #:")
         self.data_parser_headers_start_label.setStyleSheet("font-size: 14px;")
         self.data_parser_headers_start_box = QLineEdit(self)
-        #
+        ## Widget: End column text box
         self.data_parser_headers_end_label = QLabel("End column #:")
         self.data_parser_headers_end_label.setStyleSheet("font-size: 14px;")
         self.data_parser_headers_end_box = QLineEdit(self)
-        #
+        ## Widget: Decimal column text box
         self.data_parser_headers_decimal_label = QLabel("Decimal column # (ones place):")
         self.data_parser_headers_decimal_label.setStyleSheet("font-size: 14px;")
         self.data_parser_headers_decimal_box = QLineEdit(self)
-        
+        ## Widget: Push button to parse and regenerate parse preview
+        self.data_parser_button = QPushButton("Add header and data", self)
+        #
+        # Remove column controls
+        ## Widget: button to remove a column if needed:
+        self.remove_column_button = QPushButton("Remove column", self)
+
         # Data attribute table
         ## Widget: Table to show the parsed data
         self.data_attribute_table_title = QLabel("Attribute table:")
@@ -133,8 +159,6 @@ class SP1ImporterDialog(QMainWindow):
         self.data_attribute_table_label = QLabel("Use the attribute table below to make sure that everything is processed correctly. If you make a mistake (e.g., assign the wrong header name), you can click on the header to highlight a column and then use the 'Remove column' button to erase it from the table and restart.")
         self.data_attribute_table_label.setStyleSheet("font-size: 14px;")
         self.data_attribute_table = QTableWidget()
-        ## Widget: button to remove a column if needed:
-        self.remove_column_button = QPushButton("Remove column", self)
         ## Widget: Button for plotting
         self.plotting_button = QPushButton("Add map layer", self)
         
@@ -222,59 +246,87 @@ class SP1ImporterDialog(QMainWindow):
         frame_parse_table_layout.addWidget(self.data_parser_title)
         frame_parse_table_layout.addWidget(self.data_parser_label)
         frame_parse_table_layout.addWidget(self.data_parser_table)
-        frame_parse_table_layout.addWidget(self.autoparse_button)
         self.frame_parse_table.setLayout(frame_parse_table_layout)
         main_layout.addWidget(self.frame_parse_table)
-        
-        
-        # frame_headers: holds header definition items
+
+
+        # frame_autoparse: holds auto parse controls
+        self.frame_autoparse = QFrame(self)
+        frame_autoparse_layout = QVBoxLayout()
+        frame_autoparse_layout.addWidget(self.auto_parser_title)
+        frame_autoparse_layout.addWidget(self.seg_spec_dropdown_label)
+        frame_autoparse_layout.addWidget(self.seg_spec_dropdown, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_autoparse_layout.addWidget(self.autoparse_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_autoparse.setLayout(frame_autoparse_layout)
+        main_layout.addWidget(self.frame_autoparse)
+
+
+        # frame_headers: holds manual header assignment controls
+        # vertical layout to put title, parser controls, and button
         self.frame_headers = QFrame(self)
-        frame_headers_layout = QHBoxLayout()
+        frame_headers_layout = QVBoxLayout()
+        frame_headers_layout.addWidget(self.manual_parser_title)
         #
+        #
+        # a horizontal layout to put parser controls
+        self.frame_headers_controls = QFrame(self)
+        frame_headers_controls_layout = QHBoxLayout()
+        #
+        # individual frames for each parser control
+        # dropdown
         frame_headers_layout_dropdown = QFrame(self)
         frame_headers_layout_dropdown_layout = QVBoxLayout()
         frame_headers_layout_dropdown_layout.addWidget(self.data_parser_headers_label)
         frame_headers_layout_dropdown_layout.addWidget(self.data_parser_headers)
         frame_headers_layout_dropdown.setLayout(frame_headers_layout_dropdown_layout)
         #
+        # start column
         frame_headers_layout_start = QFrame(self)
         frame_headers_layout_start_layout = QVBoxLayout()
         frame_headers_layout_start_layout.addWidget(self.data_parser_headers_start_label)
         frame_headers_layout_start_layout.addWidget(self.data_parser_headers_start_box)
         frame_headers_layout_start.setLayout(frame_headers_layout_start_layout)
         #
+        # end column
         frame_headers_layout_end = QFrame(self)
         frame_headers_layout_end_layout = QVBoxLayout()
         frame_headers_layout_end_layout.addWidget(self.data_parser_headers_end_label)
         frame_headers_layout_end_layout.addWidget(self.data_parser_headers_end_box)
         frame_headers_layout_end.setLayout(frame_headers_layout_end_layout)
         #
+        # decimal column
         frame_headers_layout_decimal = QFrame(self)
         frame_headers_layout_decimal_layout = QVBoxLayout()
         frame_headers_layout_decimal_layout.addWidget(self.data_parser_headers_decimal_label)
         frame_headers_layout_decimal_layout.addWidget(self.data_parser_headers_decimal_box)
         frame_headers_layout_decimal.setLayout(frame_headers_layout_decimal_layout)
         #
-        frame_headers_layout.addWidget(frame_headers_layout_dropdown)
-        frame_headers_layout.addWidget(frame_headers_layout_start)
-        frame_headers_layout.addWidget(frame_headers_layout_end)
-        frame_headers_layout.addWidget(frame_headers_layout_decimal)
+        # add all of those controls and their vertical layouts to the horizontal layout
+        frame_headers_controls_layout.addWidget(frame_headers_layout_dropdown)
+        frame_headers_controls_layout.addWidget(frame_headers_layout_start)
+        frame_headers_controls_layout.addWidget(frame_headers_layout_end)
+        frame_headers_controls_layout.addWidget(frame_headers_layout_decimal)
+        frame_headers_controls_layout.addStretch()
+        self.frame_headers_controls.setLayout(frame_headers_controls_layout)
+        #
+        # now, add the controls and the parse button to the main vertical layout
+        frame_headers_layout.addWidget(self.frame_headers_controls)#, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_headers_layout.addWidget(self.data_parser_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_headers_layout.addStretch()
         self.frame_headers.setLayout(frame_headers_layout)
         main_layout.addWidget(self.frame_headers)
-        
-        
+
+
         # frame_attribute_table holds attribute table
         self.frame_attribute_table = QFrame(self)
         frame_attribute_table_layout = QVBoxLayout()
-        frame_attribute_table_layout.addWidget(self.data_parser_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        frame_attribute_table_layout.addWidget(self.remove_column_button, alignment = Qt.AlignmentFlag.AlignLeft)
         frame_attribute_table_layout.addWidget(self.data_attribute_table_title)
         frame_attribute_table_layout.addWidget(self.data_attribute_table)
-        frame_attribute_table_layout.addWidget(self.remove_column_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        frame_attribute_table_layout.addWidget(self.plotting_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        frame_attribute_table_layout.addWidget(self.plotting_button, alignment = Qt.AlignmentFlag.AlignLeft)
         self.frame_attribute_table.setLayout(frame_attribute_table_layout)
         main_layout.addWidget(self.frame_attribute_table)
         
-    
     
         # framez: holds input and output file selector/dialog box widgets
         self.frame_out = QFrame(self)
@@ -655,18 +707,37 @@ class SP1Importer:
         self.dialog.raise_()
         self.dialog.activateWindow()
 
+# seg_header_specs = {
+#     'Line name': [2, 17],
+#     'Shotpoint ID': [18, 25],
+#     'Reshoot code': [26, 26],
+#     'Latitude': [27, 35],
+#     'Longitude': [36, 45],
+#     'Easting': [46, 53],
+#     'Northing': [54, 61],
+#     'Elevation': [62, 66],
+#     'Year': [67, 68],
+#     'Day of year': [69, 71],
+#     'Hours': [72, 73],
+#     'Minutes': [74, 75],
+#     'Seconds': [76, 77]
+# }
+
 seg_header_specs = {
-    'Line name': [2, 17],
-    'Shotpoint ID': [18, 25],
-    'Reshoot code': [26, 26],
-    'Latitude': [27, 35],
-    'Longitude': [36, 45],
-    'Easting': [46, 53],
-    'Northing': [54, 61],
-    'Elevation': [62, 66],
-    'Year': [67, 68],
-    'Day of year': [69, 71],
-    'Hours': [72, 73],
-    'Minutes': [74, 75],
-    'Seconds': [76, 77]
+        'SP1': {
+                'Line name': [2, 17],
+                'Shotpoint ID': [18, 25],
+                'Reshoot code': [26, 26],
+                'Latitude': [27, 35],
+                'Longitude': [36, 45],
+                'Easting': [46, 53],
+                'Northing': [54, 61],
+                'Elevation': [62, 66],
+                'Year': [67, 68],
+                'Day of year': [69, 71],
+                'Hours': [72, 73],
+                'Minutes': [74, 75],
+                'Seconds': [76, 77]
+        }
 }
+
