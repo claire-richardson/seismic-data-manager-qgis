@@ -186,7 +186,7 @@ class SP1ImporterDialog(QMainWindow):
         # DEFINE WIDGET SIGNALS
         #######################
         ## signal for when the import type is selected
-#        # self.import_type_dropdown.currentTextChanged.connect(self.update_import_type)
+        self.import_type_dropdown.currentTextChanged.connect(self.update_import_type)
 
         ## signal for when the input file browser button is clicked (activate method/slot .load_input_file)
         self.input_file_selector_button.clicked.connect(self.load_input_file)
@@ -239,16 +239,18 @@ class SP1ImporterDialog(QMainWindow):
         frame_input_selector_import_type.setLayout(frame_input_selector_import_type_layout)
         # 
         # subframe for adding a map layer
-        frame_input_selector_map_layer = QFrame(self)
+        self.frame_input_selector_map_layer = QFrame(self)
+        self.frame_input_selector_map_layer.setVisible(True)
         frame_input_selector_map_layer_layout = QHBoxLayout()
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_button)
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name_label)
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name)
         frame_input_selector_map_layer_layout.addStretch()
-        frame_input_selector_map_layer.setLayout(frame_input_selector_map_layer_layout)
+        self.frame_input_selector_map_layer.setLayout(frame_input_selector_map_layer_layout)
         # v
         # subframe for upload file selector controls
-        frame_input_selector_upload = QFrame(self)
+        self.frame_input_selector_upload = QFrame(self)
+        self.frame_input_selector_upload.setVisible(False)
         frame_input_selector_upload_layout = QVBoxLayout()
         # 
         # sub subframe for input file selector dialog box
@@ -279,13 +281,13 @@ class SP1ImporterDialog(QMainWindow):
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_dialog)
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_type_def)
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_value_def)
-        frame_input_selector_upload.setLayout(frame_input_selector_upload_layout)
+        self.frame_input_selector_upload.setLayout(frame_input_selector_upload_layout)
         # ^
         #
         frame_input_selector_layout.addWidget(self.input_file_label)
         frame_input_selector_layout.addWidget(frame_input_selector_import_type)
-        frame_input_selector_layout.addWidget(frame_input_selector_map_layer)
-        frame_input_selector_layout.addWidget(frame_input_selector_upload)
+        frame_input_selector_layout.addWidget(self.frame_input_selector_map_layer)
+        frame_input_selector_layout.addWidget(self.frame_input_selector_upload)
         self.frame_input_selector.setLayout(frame_input_selector_layout)
         main_layout.addWidget(self.frame_input_selector)
 
@@ -424,6 +426,10 @@ class SP1ImporterDialog(QMainWindow):
         # self.setCentralWidget(container)
         self.setCentralWidget(scroll_area)
         
+    def update_import_type(self, import_type):
+        self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
+        self.frame_input_selector_upload.setVisible(import_type == "File upload")
+
     # Define the method/slot for when the input file (fin_button) is clicked (opens dialog box):
     def load_input_file(self):
         # first, grab the file name
@@ -821,4 +827,3 @@ seg_header_specs = {
                 'Reshoot code': [26, 26]
         }
 }
-
