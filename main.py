@@ -81,6 +81,7 @@ class SP1ImporterDialog(QMainWindow):
         self.header_content_definition_type_dropdown.addItems(["Symbol/Letter", "Lines to skip"])
         self.header_content_definition_value_label = QLabel("Header content indicator (symbol, letter, or number of lines to skip):")
         self.header_content_definition_value_line = QLineEdit(self)
+        self.header_content_definition_load_button = QPushButton("Load file", self)
 
         # Output file selector
         ## Widget: Label for output file selector
@@ -189,7 +190,10 @@ class SP1ImporterDialog(QMainWindow):
         self.import_type_dropdown.currentTextChanged.connect(self.update_import_type)
 
         ## signal for when the input file browser button is clicked (activate method/slot .load_input_file)
-        self.input_file_selector_button.clicked.connect(self.load_input_file)
+        self.input_file_selector_button.clicked.connect(self.select_file)
+
+        ## signal for when the upload file button is pushed
+        self.header_content_definition_load_button.clicked.connect(self.load_input_file)
 
         ## signal for when the autoparse button is pushed (activate method/slot .autoparse)
         self.autoparse_button.clicked.connect(self.autoparse)
@@ -281,6 +285,7 @@ class SP1ImporterDialog(QMainWindow):
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_dialog)
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_type_def)
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_value_def)
+        frame_input_selector_upload_layout.addWidget(self.header_content_definition_load_button, alignment = Qt.AlignmentFlag.AlignLeft)
         self.frame_input_selector_upload.setLayout(frame_input_selector_upload_layout)
         # ^
         #
@@ -430,18 +435,25 @@ class SP1ImporterDialog(QMainWindow):
         self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
         self.frame_input_selector_upload.setVisible(import_type == "File upload")
 
+    def select_file(self):
+        # grab the file name
+        fin = QFileDialog.getOpenFileName(self, "Open File", "", "SP1 files (*.sp1);;All Files (*)")
+        self.input_file_selector_line.setText(fin[0])
+
     # Define the method/slot for when the input file (fin_button) is clicked (opens dialog box):
     def load_input_file(self):
-        # first, grab the file name
-        fin = QFileDialog.getOpenFileName(self, "Open File", "", "SP1 files (*.sp1);;All Files (*)")
-        
+        # first, get the file header content information
+        header_indicator_type = self.header_content_definition_type_dropdown.currentText()
+
+        if header_indicator_type == "Symbol/Letter":
+            header_indicator = str(self.header_content_definition_value_line.text())
+        elif header_indicator_type == "Lines to skip":
+            header_indicator = int(self.header_content_definition_value_line.text())
+
+        input_file_path = self.input_file_selector_line.text()
+
         # if a file is selected (i.e., if the user doesn't hit "cancel") load the input file and do some initial parsing (print header and initial data preview)
-        if fin:
-            # grab the string of the entire input file path
-            input_file_path = fin[0]
-            
-            # print it in the "input file" text edit line
-            self.input_file_selector_line.setText(input_file_path)
+        if len(input_file_path) > 0:
 
             # read and print the header information to the header text box            
             # open the input .sp1 file and read all lines
@@ -452,14 +464,14 @@ class SP1ImporterDialog(QMainWindow):
                 table_data = []
                 # loop through each line and parse, print previews accordingly
                 for line in input_file_lines:
-                    
-                    # First, if the line is a header line (i.e., it starts with 'H'), print it in the header preview text box.
-                    if line[0] == "H":
+
+                    # First, if the line is a header line, print it in the header preview text box.
+                    if (header_indicator_type == "Symbol/Letter" and line[0] == header_indicator) or (header_indicator_type == "Lines to skip" and header_line_no < header_indicator):
                         self.header_text.insertPlainText(f"{header_line_no + 1} {line}")
                         header_line_no += 1
 
                     # then, print the remaining lines as they are (raw) in the raw data preview text box
-                    elif line[0] != "H":
+                    else:
                         self.data_columnized_text.insertPlainText(line)
                         table_data.append(line)
 
