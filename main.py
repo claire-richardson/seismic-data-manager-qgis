@@ -49,18 +49,39 @@ class SP1ImporterDialog(QMainWindow):
         #############
         self.window_title = QLabel("SP1 file importer and parser")
         self.window_title.setStyleSheet("font-weight: bold; font-size: 24px;")
-        self.window_title_label = QLabel("Developed by Claire Richardson (crricha5@asu.edu)\nOctober 2026")
+        self.window_title_label = QLabel("Developed by Claire Richardson (crricha5@asu.edu)\n")
         self.window_title_label.setStyleSheet("font-size: 16px;")
         
         # Input file selector
         ## Widget: Label for input file selector
-        self.input_label = QLabel("Input file: ")
-        self.input_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-        ## Widget: Push button to browse for input file
-        self.input_button = QPushButton("Browse", self)
-        ## Widget: Line edit box to display input file name
-        self.input_line = QLineEdit(self)
-        
+        self.input_file_label = QLabel("Select input file:")
+        self.input_file_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+        ## Widget: label for import type selection
+        self.import_type_label = QLabel("Select import type:")
+        self.import_type_label.setStyleSheet("font-size: 14px;")
+        ## Widget: combo box for import type selection
+        self.import_type_dropdown = QComboBox()
+        self.import_type_dropdown.addItems(["Map layer", "File upload"])
+        #
+        # map layer option widgets
+        ## Widget: push button and labels to import from a map layer
+        self.map_layer_import_button = QPushButton("Choose a map layer", self)
+        self.map_layer_import_name_label = QLabel("Selected map layer:")
+        self.map_layer_import_name = QLabel("No map layer selected")
+        # 
+        # file upload option widgets
+        ## Widgets: Label, line edit box, and push button
+        self.input_file_selector_label = QLabel("Choose a file:")
+        self.input_file_selector_line = QLineEdit(self)
+        self.input_file_selector_button = QPushButton("Browse", self)
+        ## Widgets: Header content definition
+        self.header_content_definition_title = QLabel("Provide header content information:")
+        self.header_content_definition_type_label = QLabel("Header content indicator type:")
+        self.header_content_definition_type_dropdown = QComboBox()
+        self.header_content_definition_type_dropdown.addItems(["Symbol/Letter", "Lines to skip"])
+        self.header_content_definition_value_label = QLabel("Header content indicator (symbol, letter, or number of lines to skip):")
+        self.header_content_definition_value_line = QLineEdit(self)
+
         # Output file selector
         ## Widget: Label for output file selector
         self.output_label = QLabel("Output file: ")
@@ -131,8 +152,6 @@ class SP1ImporterDialog(QMainWindow):
         self.data_parser_headers_label = QLabel("Header:")
         self.data_parser_headers_label.setStyleSheet("font-size: 14px;")
         self.data_parser_headers = QComboBox()
-        # self.data_parser_headers.addItems(list(seg_header_specs[self.seg_spec_dropdown.currentText()]))
-        self.data_parser_headers.addItems(list(seg_header_specs['SP1']))
         ## Widget: Start column text box
         self.data_parser_headers_start_label = QLabel("Start column #:")
         self.data_parser_headers_start_label.setStyleSheet("font-size: 14px;")
@@ -162,14 +181,21 @@ class SP1ImporterDialog(QMainWindow):
         ## Widget: Button for plotting
         self.plotting_button = QPushButton("Add map layer", self)
         
-        
-        
-        
+
         #######################
         # DEFINE WIDGET SIGNALS
         #######################
+        ## signal for when the import type is selected
+#        # self.import_type_dropdown.currentTextChanged.connect(self.update_import_type)
+
         ## signal for when the input file browser button is clicked (activate method/slot .load_input_file)
-        self.input_button.clicked.connect(self.load_input_file)
+        self.input_file_selector_button.clicked.connect(self.load_input_file)
+
+        ## signal for when the autoparse button is pushed (activate method/slot .autoparse)
+        self.autoparse_button.clicked.connect(self.autoparse)
+
+        ## signal for when the SEG specification dropdown is changed (activate method/slot .update_data_parser_headers)
+        self.seg_spec_dropdown.currentTextChanged.connect(self.update_data_parser_headers)
         
         ## signal for when the input file browser button is clicked (activate method/slot .parse_data)
         self.data_parser_button.clicked.connect(self.parse_data)
@@ -177,41 +203,93 @@ class SP1ImporterDialog(QMainWindow):
         ## signal for when the remove column button is pushed (activate method/slot .remove_column)
         self.remove_column_button.clicked.connect(self.remove_column)
 
-        ## signal for when the autoparse button is pushed (activate method/slot .autoparse)
-        self.autoparse_button.clicked.connect(self.autoparse)
-
         ## signal for when the add map layer button is pushed (adds a map layer to the QGIS project (activate method/slot .add_map_layer))
         self.plotting_button.clicked.connect(self.add_map_layer)
 
         ## signal for when the save file button is pushed (activate method/slot .)
         self.output_button.clicked.connect(self.save_new_file)
         
-        
-        
-        
+
         ##################
         # DESIGN UI LAYOUT
         ##################
         ## Set main vertical layout
         main_layout = QVBoxLayout()
         
-        ## Create frames for additional widgets
+        ## Title and subtitle frame
         self.frame_title = QFrame(self)
         frame_title_layout = QVBoxLayout()
         frame_title_layout.addWidget(self.window_title)
         frame_title_layout.addWidget(self.window_title_label)
         self.frame_title.setLayout(frame_title_layout)
         main_layout.addWidget(self.frame_title)
-        
-        ## add input file dialog frame
-        self.frame_in = QFrame(self)
-        frame_in_layout = QHBoxLayout()
-        frame_in_layout.addWidget(self.input_label)
-        frame_in_layout.addWidget(self.input_line)
-        frame_in_layout.addWidget(self.input_button)
-        self.frame_in.setLayout(frame_in_layout)
-        main_layout.addWidget(self.frame_in)
-        
+
+
+        ## add input file selector frame
+        # create main input file selector frame and vertical layout
+        self.frame_input_selector = QFrame(self)
+        frame_input_selector_layout = QVBoxLayout()
+        #
+        # subframe for selecting import type
+        frame_input_selector_import_type = QFrame(self)
+        frame_input_selector_import_type_layout = QHBoxLayout()
+        frame_input_selector_import_type_layout.addWidget(self.import_type_label)
+        frame_input_selector_import_type_layout.addWidget(self.import_type_dropdown)
+        frame_input_selector_import_type_layout.addStretch()
+        frame_input_selector_import_type.setLayout(frame_input_selector_import_type_layout)
+        # 
+        # subframe for adding a map layer
+        frame_input_selector_map_layer = QFrame(self)
+        frame_input_selector_map_layer_layout = QHBoxLayout()
+        frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_button)
+        frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name_label)
+        frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name)
+        frame_input_selector_map_layer_layout.addStretch()
+        frame_input_selector_map_layer.setLayout(frame_input_selector_map_layer_layout)
+        # v
+        # subframe for upload file selector controls
+        frame_input_selector_upload = QFrame(self)
+        frame_input_selector_upload_layout = QVBoxLayout()
+        # 
+        # sub subframe for input file selector dialog box
+        frame_input_selector_upload_dialog = QFrame(self)
+        frame_input_selector_upload_dialog_layout = QHBoxLayout()
+        frame_input_selector_upload_dialog_layout.addWidget(self.input_file_selector_label)
+        frame_input_selector_upload_dialog_layout.addWidget(self.input_file_selector_line)
+        frame_input_selector_upload_dialog_layout.addWidget(self.input_file_selector_button)
+        frame_input_selector_upload_dialog_layout.addStretch()
+        frame_input_selector_upload_dialog.setLayout(frame_input_selector_upload_dialog_layout)
+        #
+        # sub subframe for input file header content type definition
+        frame_input_selector_upload_header_type_def = QFrame(self)
+        frame_input_selector_upload_header_type_def_layout = QHBoxLayout()
+        frame_input_selector_upload_header_type_def_layout.addWidget(self.header_content_definition_type_label)
+        frame_input_selector_upload_header_type_def_layout.addWidget(self.header_content_definition_type_dropdown)
+        frame_input_selector_upload_header_type_def_layout.addStretch()
+        frame_input_selector_upload_header_type_def.setLayout(frame_input_selector_upload_header_type_def_layout)
+        #
+        #  sub subframe for input file header content value definition
+        frame_input_selector_upload_header_value_def = QFrame(self)
+        frame_input_selector_upload_header_value_def_layout = QHBoxLayout()
+        frame_input_selector_upload_header_value_def_layout.addWidget(self.header_content_definition_value_label)
+        frame_input_selector_upload_header_value_def_layout.addWidget(self.header_content_definition_value_line)
+        frame_input_selector_upload_header_value_def_layout.addStretch()
+        frame_input_selector_upload_header_value_def.setLayout(frame_input_selector_upload_header_value_def_layout)
+        #
+        frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_dialog)
+        frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_type_def)
+        frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_value_def)
+        frame_input_selector_upload.setLayout(frame_input_selector_upload_layout)
+        # ^
+        #
+        frame_input_selector_layout.addWidget(self.input_file_label)
+        frame_input_selector_layout.addWidget(frame_input_selector_import_type)
+        frame_input_selector_layout.addWidget(frame_input_selector_map_layer)
+        frame_input_selector_layout.addWidget(frame_input_selector_upload)
+        self.frame_input_selector.setLayout(frame_input_selector_layout)
+        main_layout.addWidget(self.frame_input_selector)
+
+
         # frame1: holds preview widgets
         ## define main frame 3 (horizontal layout for preview boxes)
         self.frame1 = QFrame(self)
@@ -252,23 +330,23 @@ class SP1ImporterDialog(QMainWindow):
 
         # frame_autoparse: holds auto parse controls
         self.frame_autoparse = QFrame(self)
-        frame_autoparse_layout = QVBoxLayout()
-        frame_autoparse_layout.addWidget(self.auto_parser_title)
-        frame_autoparse_layout.addWidget(self.seg_spec_dropdown_label)
-        frame_autoparse_layout.addWidget(self.seg_spec_dropdown, alignment = Qt.AlignmentFlag.AlignLeft)
-        frame_autoparse_layout.addWidget(self.autoparse_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_autoparse_layout = QHBoxLayout()
+        #
+        frame_autoparse_sub = QFrame(self)
+        frame_autoparse_sub_layout = QVBoxLayout()
+        frame_autoparse_sub_layout.addWidget(self.auto_parser_title)
+        frame_autoparse_sub_layout.addWidget(self.seg_spec_dropdown_label)
+        frame_autoparse_sub_layout.addWidget(self.seg_spec_dropdown, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_autoparse_sub_layout.addWidget(self.autoparse_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_autoparse_sub.setLayout(frame_autoparse_sub_layout)
+        #
+        frame_autoparse_layout.addWidget(frame_autoparse_sub)
         self.frame_autoparse.setLayout(frame_autoparse_layout)
         main_layout.addWidget(self.frame_autoparse)
 
 
         # frame_headers: holds manual header assignment controls
-        # vertical layout to put title, parser controls, and button
-        self.frame_headers = QFrame(self)
-        frame_headers_layout = QVBoxLayout()
-        frame_headers_layout.addWidget(self.manual_parser_title)
-        #
-        #
-        # a horizontal layout to put parser controls
+        # a horizontal layout to put title, parser controls, and button
         self.frame_headers_controls = QFrame(self)
         frame_headers_controls_layout = QHBoxLayout()
         #
@@ -276,8 +354,11 @@ class SP1ImporterDialog(QMainWindow):
         # dropdown
         frame_headers_layout_dropdown = QFrame(self)
         frame_headers_layout_dropdown_layout = QVBoxLayout()
+        frame_headers_layout_dropdown_layout.addWidget(self.manual_parser_title)
         frame_headers_layout_dropdown_layout.addWidget(self.data_parser_headers_label)
         frame_headers_layout_dropdown_layout.addWidget(self.data_parser_headers)
+        frame_headers_layout_dropdown_layout.addWidget(self.data_parser_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.data_parser_headers.addItems(list(seg_header_specs[self.seg_spec_dropdown.currentText()]))
         frame_headers_layout_dropdown.setLayout(frame_headers_layout_dropdown_layout)
         #
         # start column
@@ -308,13 +389,7 @@ class SP1ImporterDialog(QMainWindow):
         frame_headers_controls_layout.addWidget(frame_headers_layout_decimal)
         frame_headers_controls_layout.addStretch()
         self.frame_headers_controls.setLayout(frame_headers_controls_layout)
-        #
-        # now, add the controls and the parse button to the main vertical layout
-        frame_headers_layout.addWidget(self.frame_headers_controls)#, alignment = Qt.AlignmentFlag.AlignLeft)
-        frame_headers_layout.addWidget(self.data_parser_button, alignment = Qt.AlignmentFlag.AlignLeft)
-        frame_headers_layout.addStretch()
-        self.frame_headers.setLayout(frame_headers_layout)
-        main_layout.addWidget(self.frame_headers)
+        main_layout.addWidget(self.frame_headers_controls)
 
 
         # frame_attribute_table holds attribute table
@@ -360,7 +435,7 @@ class SP1ImporterDialog(QMainWindow):
             input_file_path = fin[0]
             
             # print it in the "input file" text edit line
-            self.input_line.setText(input_file_path)
+            self.input_file_selector_line.setText(input_file_path)
 
             # read and print the header information to the header text box            
             # open the input .sp1 file and read all lines
@@ -398,7 +473,10 @@ class SP1ImporterDialog(QMainWindow):
 
     def autoparse(self):
         return
-        
+
+    def update_data_parser_headers(self):
+        self.data_parser_headers.clear()
+        self.data_parser_headers.addItems(list(seg_header_specs[self.seg_spec_dropdown.currentText()]))
     
     def parse_data(self):
         dec = False
@@ -427,7 +505,7 @@ class SP1ImporterDialog(QMainWindow):
 
         # scan the input data file to retain just the data, dropping the header content
         data_lines = []
-        with open(self.input_line.text(), 'r') as fin:
+        with open(self.input_file_selector_line.text(), 'r') as fin:
             input_lines = fin.readlines()
             for line in input_lines:
                 if line[0] != 'H':
@@ -500,9 +578,7 @@ class SP1ImporterDialog(QMainWindow):
             self.data_attribute_table.setItem(data_line, column_index, QTableWidgetItem(val))
         self.data_attribute_table.setHorizontalHeaderItem(column_index, QTableWidgetItem(current_header))
 
-    
-    
-    
+
     def remove_column(self):
         self.data_attribute_table.removeColumn(self.data_attribute_table.currentColumn())
 
@@ -738,6 +814,11 @@ seg_header_specs = {
                 'Hours': [72, 73],
                 'Minutes': [74, 75],
                 'Seconds': [76, 77]
+        },
+        'SP2': {
+                'Line name': [2, 17],
+                'Shotpoint ID': [18, 25],
+                'Reshoot code': [26, 26]
         }
 }
 
