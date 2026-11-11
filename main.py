@@ -32,13 +32,13 @@ from qgis.PyQt.QtWidgets import (QMainWindow,
 plugin_dir = os.path.dirname(__file__)
 
 # Define the plugin's main window
-class SP1ImporterDialog(QMainWindow):
+class SeismicManagerDialog(QMainWindow):
     
     # Define the constructor.
     ## Call the parent QMainWindow class, set its initial attributes.
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("SP1 Importer")
+        self.setWindowTitle(window_name)
         self.initGui()
 
     # Define the UI initializer
@@ -49,9 +49,17 @@ class SP1ImporterDialog(QMainWindow):
         #############
         self.window_title = QLabel("Seismic positioning data file importer and parser")
         self.window_title.setStyleSheet("font-weight: bold; font-size: 24px;")
-        self.window_title_label = QLabel("For SEG positioning file formats, including:\n" \
-                                         "- SP1\n" \
-                                         "Developed by Claire Richardson (crricha5@asu.edu)\n")
+        self.window_title_label = QLabel(
+            "This plugin offers an interface and functionality to import, parse, and export seismic positioning data according to specifications from the Society of Exploration Geophysicists (SEG), either from an uploaded file or directly from a map layer in QGIS.<br>" \
+            "Currently supported formats include:<br>" \
+            "- SEG P1 (.sp1)<br>" \
+            "- SPS (.sps, .rps)<br>" \
+            "Find SEG specification information here: <a href=\"https://seg.org/publications/seg-technical-standards/\">SEG Technical Standards</a>"
+        )
+        self.window_title_label.setTextFormat(Qt.TextFormat.RichText)
+        self.window_title_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        self.window_title_label.setOpenExternalLinks(True)
+        self.window_title_label.setWordWrap(True)
         self.window_title_label.setStyleSheet("font-size: 16px;")
         
         # Input file selector
@@ -195,6 +203,15 @@ class SP1ImporterDialog(QMainWindow):
         self.data_attribute_table = QTableWidget()
         ## Widget: Button for plotting
         self.plotting_button = QPushButton("Add map layer", self)
+
+        ## Widget: Label for contact info
+        self.contact_label = QLabel(
+            "Plugin developed by <a href=\"https://claire-richardson.com\">Claire Richardson</a>. "
+            "Questions or feedback can be directed to crricha5@asu.edu."
+        )
+        self.contact_label.setTextFormat(Qt.TextFormat.RichText)
+        self.contact_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        self.contact_label.setOpenExternalLinks(True)
         
 
         #######################
@@ -480,6 +497,13 @@ class SP1ImporterDialog(QMainWindow):
         frame_out_layout.addWidget(self.csv_save_checkbox)
         self.frame_out.setLayout(frame_out_layout)
         main_layout.addWidget(self.frame_out)
+
+        # frame for contact information label
+        self.frame_contact = QFrame(self)
+        frame_contact_layout = QVBoxLayout()
+        frame_contact_layout.addWidget(self.contact_label)
+        self.frame_contact.setLayout(frame_contact_layout)
+        main_layout.addWidget(self.frame_contact)
         
         # Add all frames to the main layout
         container = QWidget()
@@ -546,7 +570,7 @@ class SP1ImporterDialog(QMainWindow):
 
     def select_file(self):
         # grab the file name
-        fin = QFileDialog.getOpenFileName(self, "Open File", "", "SP1 files (*.sp1);;All Files (*)")
+        fin = QFileDialog.getOpenFileName(self, "Open File", "", "Positioning files (*.sp1 *.sps *.rps);;All Files (*)")
         self.input_file_selector_line.setText(fin[0])
 
     # Define the method/slot for when the input file (fin_button) is clicked (opens dialog box):
@@ -620,7 +644,7 @@ class SP1ImporterDialog(QMainWindow):
                         data_header_start = data_header_range[0]
                         data_header_end = data_header_range[1]
                         data_header_val = line[data_header_start - 1:data_header_end]
-                        
+
                         if data_header in lat_header_possibilities or data_header in lon_header_possibilities:
                             data_header_val = self.lat_lon_naming(data_header, data_header_val)
 
@@ -744,10 +768,8 @@ class SP1ImporterDialog(QMainWindow):
             self.data_attribute_table.setItem(data_line, column_index, QTableWidgetItem(val))
         self.data_attribute_table.setHorizontalHeaderItem(column_index, QTableWidgetItem(current_header))
 
-
     def remove_column(self):
         self.data_attribute_table.removeColumn(self.data_attribute_table.currentColumn())
-
 
     def add_map_layer(self):
         table = self.data_attribute_table
@@ -778,7 +800,7 @@ class SP1ImporterDialog(QMainWindow):
             )
             return
 
-        layer = QgsVectorLayer("Point", "SP1 positions", "memory")
+        layer = QgsVectorLayer("Point", "Positions", "memory")
         layer.setCrs(layer_crs)
         provider = layer.dataProvider()
         provider.addAttributes([QgsField(name, QMetaType.Type.QString) for name in column_names])
@@ -815,9 +837,8 @@ class SP1ImporterDialog(QMainWindow):
         layer.updateExtents()
         project.addMapLayer(layer)
 
-        
     def save_new_file(self):
-        fout = QFileDialog.getSaveFileName(self, "Save File", "", "SP1 files (*.sp1);;All Files (*)")
+        fout = QFileDialog.getSaveFileName(self, "Save File", "", "Positioning files (*.sp1 *.sps *.rps);;All Files (*)")
         
         output_file_path = fout[0]
         if not output_file_path:
@@ -859,8 +880,8 @@ class SP1ImporterDialog(QMainWindow):
                         parsed_header = parsed_headers[parsed_header_idx]  # get header name
                         item = self.data_attribute_table.item(row, parsed_header_idx)
                         item_value = item.text() if item is not None else ''
-                        start_idx = seg_header_specs[parsed_header][0] - 1  # get the starting index from the SEG specs dictionary
-                        end_idx = seg_header_specs[parsed_header][1] - 1  # get the ending index from the SEG specs dictionary
+                        start_idx = seg_header_specs[self.seg_spec_dropdown.currentText()][parsed_header][0] - 1  # get the starting index from the SEG specs dictionary
+                        end_idx = seg_header_specs[self.seg_spec_dropdown.currentText()][parsed_header][1] - 1  # get the ending index from the SEG specs dictionary
                         entry_length = (end_idx - start_idx) + 1
                         csv_data_list.append(item_value)
                         
@@ -924,7 +945,7 @@ class SP1ImporterDialog(QMainWindow):
 
 
 
-class SP1Importer:
+class SeismicManager:
     def __init__(self, iface):
         self.iface = iface
         self.action = None
@@ -932,7 +953,7 @@ class SP1Importer:
 
     def initGui(self):
         icon = os.path.join(plugin_dir, 'icon.png')
-        self.action = QAction(QIcon(icon), 'SP1 Importer', self.iface.mainWindow())
+        self.action = QAction(QIcon(icon), window_name, self.iface.mainWindow())
         self.action.triggered.connect(self.run)
         self.iface.addToolBarIcon(self.action)
 
@@ -946,13 +967,14 @@ class SP1Importer:
 
     def run(self, checked=False):
         if self.dialog is None:
-            self.dialog = SP1ImporterDialog(self.iface.mainWindow())
+            self.dialog = SeismicManagerDialog(self.iface.mainWindow())
         self.dialog.show()
         self.dialog.raise_()
         self.dialog.activateWindow()
 
 seg_header_specs = {
-        'SP1': {
+        'SEG P1': {
+                'Record ID': [1, 1],
                 'Line name': [2, 17],
                 'Shotpoint ID': [18, 25],
                 'Reshoot code': [26, 26],
@@ -967,28 +989,32 @@ seg_header_specs = {
                 'Minutes': [74, 75],
                 'Seconds': [76, 77]
         },
-        'SP2': {
+        'SEG SPS': {
+                'Record ID': [1, 1],
                 'Line name': [2, 17],
-                'Shotpoint ID': [18, 25],
-                'Reshoot code': [26, 26]
+                'Point number': [18, 25],
+                'Point index': [26, 26],
+                'Point code': [27, 28],
+                'Static correction': [29, 32],
+                'Point depth': [33, 36],
+                'Seismic datum': [37, 40],
+                'Uphole time': [41, 42],
+                'Water depth': [43, 46],
+                'Map grid easting': [47, 55],
+                'Map grid northing': [56, 65],
+                'Surface elevation': [66, 71],
+                'Day of year': [72, 74],
+                'Time (hhmmss)': [75, 80]
         }
 }
 
-possible_headers = [
-    'Line name',
-    'Shotpoint ID',
-    'Reshoot code',
-    'Latitude',
-    'Longitude',
-    'Easting',
-    'Northing',
-    'Elevation',
-    'Year',
-    'Day of year',
-    'Hours',
-    'Minutes',
-    'Seconds'
-]
+possible_headers = []
+for key in seg_header_specs:
+    for header in seg_header_specs[key]:
+        if header not in possible_headers:
+            possible_headers.append(header)
 
 lat_header_possibilities = ['Latitude', 'Lat', 'LAT', 'latitude', 'lat']
 lon_header_possibilities = ['Longitude', 'Lon', 'LON', 'longitude', 'lon']
+
+window_name = "Seismic Data Manager"
