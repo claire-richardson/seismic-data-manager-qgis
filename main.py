@@ -83,6 +83,7 @@ class SP1ImporterDialog(QMainWindow):
         self.header_content_definition_type_dropdown.addItems(["Symbol/Letter", "Lines to skip"])
         self.header_content_definition_value_label = QLabel("File header content indicator (symbol, letter, or lines to skip):")
         self.header_content_definition_value_line = QLineEdit(self)
+        self.header_content_definition_value_line.setMaximumWidth(50)
         self.header_content_definition_load_button = QPushButton("Load file", self)
 
         # Output file selector
@@ -122,24 +123,26 @@ class SP1ImporterDialog(QMainWindow):
         ## Widget: Label for the data parser section
         self.data_parser_title = QLabel("Data parser:")
         self.data_parser_title.setStyleSheet("font-weight: bold; font-size: 16px;")
-        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the data headers listed in the desired SEG specification." \
-        "Use the auto-parse dropdown menu and button to select the specification and automatically assign data headers and columns." \
-        "If an automatically assigned column is incorrect in the attribute table, or includes an implicit decimal point, remove it using the `remove column` button and assign it manually using the text boxes below. If a data header is empty/unnecessary, it can be removed the same way.\n\n" \
-        "To manually assign a data header and corresponding data:\n" \
+        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the data headers listed in the desired SEG file type specification." \
+        "Use the Auto-parse section to select the specification and automatically assign data headers and columns. If there is an implicit decimal in the Latitude and Longitude fields, indicate the number of decimal places there are in the provided box." \
+        "If an automatically assigned column populats incorrectly in the attribute table, remove it using the `Remove column` button and assign it manually using the Manual parse controls.\n\n" \
+        "Use the Manual parse controls to manually assign a data header and corresponding data:\n" \
         "-  For a given data header, identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n"
         "-  If the values for a given data header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\n\n" \
-        "Note that not all data headers in the dropdown need to be used. The included data headers are those listed in the supported SEG specifications." \
-        "Besides the primary file header content, which is handled in the top left box above, only the information passed through the parser is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored, and the order of the data headers in the attribute table does not need to correspond to the order in the specification.")
+        "The data headers in the dropdown box are possible headers from all supported SEG specifications." \
+        "Besides the primary file header content, which is handled in the top left box above, only the data passed through the parser and populated in the attribute table is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored.\n"
+        "Note that the order of the data headers in the attribute table does not need to correspond to the order in the specification.\n")
         self.data_parser_label.setWordWrap(True)
         self.data_parser_label.setStyleSheet("font-size: 14px;")
         ## Widget: Table for parsing input
         self.data_parser_table = QTableWidget()
+        self.data_parser_table.setMaximumHeight(180)
 
         # data parser controls:
         # Auto-parse controls
         ## Widget: Dropdown for SEG Specs
         ## Widget: Label for the auto parser
-        self.auto_parser_title = QLabel("Auto parse:")
+        self.auto_parser_title = QLabel("Auto-parse:")
         self.auto_parser_title.setStyleSheet("font-size: 14px; text-decoration: underline;")
         self.seg_spec_dropdown_label = QLabel("SEG file type:")
         self.seg_spec_dropdown_label.setStyleSheet("font-size: 14px;")
@@ -147,6 +150,13 @@ class SP1ImporterDialog(QMainWindow):
         self.seg_spec_dropdown.addItems(list(seg_header_specs))
         ## Widget: Push buttons for autoparse
         self.autoparse_button = QPushButton("Auto-parse", self)
+        ## Widget: label for decimal places in lat/lon fields
+        # self.lat_lon_decimal_title = QLabel("")
+        # self.lat_lon_decimal_title.setStyleSheet("font-size: 14px;")
+        self.lat_lon_decimal_label = QLabel("Decimal places in lat/lon values:")
+        self.lat_lon_decimal_label.setStyleSheet("font-size: 14px;")
+        self.lat_lon_decimal_box = QLineEdit(self)
+
         #
         # Manual parse controls
         ## Widget: Label for the manual parser
@@ -156,6 +166,7 @@ class SP1ImporterDialog(QMainWindow):
         self.data_parser_headers_label = QLabel("Header:")
         self.data_parser_headers_label.setStyleSheet("font-size: 14px;")
         self.data_parser_headers = QComboBox()
+        self.data_parser_headers.addItems(possible_headers)
         ## Widget: Start column text box
         self.data_parser_headers_start_label = QLabel("Start column #:")
         self.data_parser_headers_start_label.setStyleSheet("font-size: 14px;")
@@ -236,10 +247,12 @@ class SP1ImporterDialog(QMainWindow):
         # create main input file selector frame and vertical layout
         self.frame_input_selector = QFrame(self)
         frame_input_selector_layout = QVBoxLayout()
+        frame_input_selector_layout.setContentsMargins(20, 0, 0, 0)
         #
         # subframe for selecting import type
         frame_input_selector_import_type = QFrame(self)
         frame_input_selector_import_type_layout = QHBoxLayout()
+        frame_input_selector_import_type_layout.setContentsMargins(0, 0, 0, 0)
         frame_input_selector_import_type_layout.addWidget(self.import_type_label)
         frame_input_selector_import_type_layout.addWidget(self.import_type_dropdown)
         frame_input_selector_import_type_layout.addStretch()
@@ -249,6 +262,7 @@ class SP1ImporterDialog(QMainWindow):
         self.frame_input_selector_map_layer = QFrame(self)
         self.frame_input_selector_map_layer.setVisible(False)
         frame_input_selector_map_layer_layout = QHBoxLayout()
+        frame_input_selector_map_layer_layout.setContentsMargins(10, 0, 0, 0)
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_button)
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name_label)
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name)
@@ -259,10 +273,13 @@ class SP1ImporterDialog(QMainWindow):
         self.frame_input_selector_upload = QFrame(self)
         self.frame_input_selector_upload.setVisible(True)
         frame_input_selector_upload_layout = QVBoxLayout()
+        frame_input_selector_upload_layout.setContentsMargins(10, 0, 0, 0)
         # 
         # sub subframe for input file selector dialog box
         frame_input_selector_upload_dialog = QFrame(self)
         frame_input_selector_upload_dialog_layout = QHBoxLayout()
+        frame_input_selector_upload_dialog_layout.setContentsMargins(10, 0, 0, 0)
+        frame_input_selector_upload_dialog_layout.setSpacing(4)
         frame_input_selector_upload_dialog_layout.addWidget(self.input_file_selector_label)
         frame_input_selector_upload_dialog_layout.addWidget(self.input_file_selector_line)
         frame_input_selector_upload_dialog_layout.addWidget(self.input_file_selector_button)
@@ -272,6 +289,8 @@ class SP1ImporterDialog(QMainWindow):
         # sub subframe for input file header content type definition
         frame_input_selector_upload_header_type_def = QFrame(self)
         frame_input_selector_upload_header_type_def_layout = QHBoxLayout()
+        frame_input_selector_upload_header_type_def_layout.setContentsMargins(10, 0, 0, 0)
+        frame_input_selector_upload_header_type_def_layout.setSpacing(4)
         frame_input_selector_upload_header_type_def_layout.addWidget(self.header_content_definition_type_label)
         frame_input_selector_upload_header_type_def_layout.addWidget(self.header_content_definition_type_dropdown)
         frame_input_selector_upload_header_type_def_layout.addStretch()
@@ -280,6 +299,8 @@ class SP1ImporterDialog(QMainWindow):
         #  sub subframe for input file header content value definition
         frame_input_selector_upload_header_value_def = QFrame(self)
         frame_input_selector_upload_header_value_def_layout = QHBoxLayout()
+        frame_input_selector_upload_header_value_def_layout.setContentsMargins(10, 0, 0, 0)
+        frame_input_selector_upload_header_value_def_layout.setSpacing(4)
         frame_input_selector_upload_header_value_def_layout.addWidget(self.header_content_definition_value_label)
         frame_input_selector_upload_header_value_def_layout.addWidget(self.header_content_definition_value_line)
         frame_input_selector_upload_header_value_def_layout.addStretch()
@@ -290,13 +311,14 @@ class SP1ImporterDialog(QMainWindow):
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_value_def)
         frame_input_selector_upload_layout.addWidget(self.header_content_definition_load_button, alignment = Qt.AlignmentFlag.AlignLeft)
         frame_input_selector_upload_layout.setSpacing(0)
+        frame_input_selector_upload_layout.addStretch()
         self.frame_input_selector_upload.setLayout(frame_input_selector_upload_layout)
         # ^
         #
         frame_input_selector_layout.addWidget(self.input_file_label)
         frame_input_selector_layout.addWidget(frame_input_selector_import_type)
-        frame_input_selector_layout.addWidget(self.frame_input_selector_map_layer)
-        frame_input_selector_layout.addWidget(self.frame_input_selector_upload)
+        frame_input_selector_layout.addWidget(self.frame_input_selector_map_layer, alignment=Qt.AlignmentFlag.AlignTop)
+        frame_input_selector_layout.addWidget(self.frame_input_selector_upload, alignment=Qt.AlignmentFlag.AlignTop)
         self.frame_input_selector.setLayout(frame_input_selector_layout)
         main_layout.addWidget(self.frame_input_selector)
 
@@ -332,6 +354,8 @@ class SP1ImporterDialog(QMainWindow):
         # frame_parse_table: holds data parser title
         self.frame_parse_table = QFrame(self)
         frame_parse_table_layout = QVBoxLayout()
+        frame_parse_table_layout.setContentsMargins(20, 0, 20, 0)
+        frame_parse_table_layout.setSpacing(2)
         frame_parse_table_layout.addWidget(self.data_parser_title)
         frame_parse_table_layout.addWidget(self.data_parser_label)
         frame_parse_table_layout.addWidget(self.data_parser_table)
@@ -339,68 +363,101 @@ class SP1ImporterDialog(QMainWindow):
         main_layout.addWidget(self.frame_parse_table)
 
 
-        # frame_autoparse: holds auto parse controls
-        self.frame_autoparse = QFrame(self)
-        frame_autoparse_layout = QHBoxLayout()
-        #
-        frame_autoparse_sub = QFrame(self)
-        frame_autoparse_sub_layout = QVBoxLayout()
-        frame_autoparse_sub_layout.addWidget(self.auto_parser_title)
-        frame_autoparse_sub_layout.addWidget(self.seg_spec_dropdown_label)
-        frame_autoparse_sub_layout.addWidget(self.seg_spec_dropdown, alignment = Qt.AlignmentFlag.AlignLeft)
-        frame_autoparse_sub_layout.addWidget(self.autoparse_button, alignment = Qt.AlignmentFlag.AlignLeft)
-        frame_autoparse_sub.setLayout(frame_autoparse_sub_layout)
-        #
-        frame_autoparse_layout.addWidget(frame_autoparse_sub)
-        self.frame_autoparse.setLayout(frame_autoparse_layout)
-        main_layout.addWidget(self.frame_autoparse)
 
-
-        # frame_headers: holds manual header assignment controls
-        # a horizontal layout to put title, parser controls, and button
-        self.frame_headers_controls = QFrame(self)
-        frame_headers_controls_layout = QHBoxLayout()
+        # frame_parse: main horizontal frame for all data parser controls, including auto prase and manual parse
+        self.frame_parse = QFrame(self)
+        frame_parse_layout = QHBoxLayout()
+        frame_parse_layout.setContentsMargins(20, 0, 20, 0)
+        frame_parse_layout.setSpacing(8)
         #
-        # individual frames for each parser control
-        # dropdown
-        frame_headers_layout_dropdown = QFrame(self)
-        frame_headers_layout_dropdown_layout = QVBoxLayout()
-        frame_headers_layout_dropdown_layout.addWidget(self.manual_parser_title)
-        frame_headers_layout_dropdown_layout.addWidget(self.data_parser_headers_label)
-        frame_headers_layout_dropdown_layout.addWidget(self.data_parser_headers)
-        frame_headers_layout_dropdown_layout.addWidget(self.data_parser_button, alignment = Qt.AlignmentFlag.AlignLeft)
-        self.data_parser_headers.addItems(list(seg_header_specs[self.seg_spec_dropdown.currentText()]))
-        frame_headers_layout_dropdown.setLayout(frame_headers_layout_dropdown_layout)
+        ## frame_parse_autoparse: holds auto parse controls
+        self.frame_parse_autoparse = QFrame(self)
+        frame_parse_autoparse_layout = QVBoxLayout()
+        frame_parse_autoparse_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_autoparse_layout.setSpacing(2)
+        ###
+        ### frame_parse_autoparse_dropdown
+        self.frame_parse_autoparse_dropdown = QFrame(self)
+        frame_parse_autoparse_dropdown_layout = QHBoxLayout()
+        frame_parse_autoparse_dropdown_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_autoparse_dropdown_layout.setSpacing(4)
+        frame_parse_autoparse_dropdown_layout.addWidget(self.seg_spec_dropdown_label)
+        frame_parse_autoparse_dropdown_layout.addWidget(self.seg_spec_dropdown, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_autoparse_dropdown.setLayout(frame_parse_autoparse_dropdown_layout)
+        ###
+        ### frame_parse_autoparse_lat_lon
+        self.frame_parse_autoparse_lat_lon = QFrame(self)
+        frame_parse_autoparse_lat_lon_layout = QHBoxLayout()
+        frame_parse_autoparse_lat_lon_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_autoparse_lat_lon_layout.setSpacing(4)
+        frame_parse_autoparse_lat_lon_layout.addWidget(self.lat_lon_decimal_label)
+        frame_parse_autoparse_lat_lon_layout.addWidget(self.lat_lon_decimal_box, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_autoparse_lat_lon.setLayout(frame_parse_autoparse_lat_lon_layout)
+        ##
+        ## add title, file type dropdown, lat/lon dec box, and auto parse button to frame_parse_autoparse_layout, and add that to frame_parse_layout
+        frame_parse_autoparse_layout.addWidget(self.auto_parser_title)
+        frame_parse_autoparse_layout.addWidget(self.frame_parse_autoparse_dropdown)
+        frame_parse_autoparse_layout.addWidget(self.frame_parse_autoparse_lat_lon)
+        frame_parse_autoparse_layout.addWidget(self.autoparse_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_autoparse.setLayout(frame_parse_autoparse_layout)
+        frame_parse_layout.addWidget(self.frame_parse_autoparse, alignment=Qt.AlignmentFlag.AlignTop)
+        ##
+        # now, add manual parse controls.
+        ## frame_parse_manual: holds manual parse controls
+        self.frame_parse_manual = QFrame(self)
+        frame_parse_manual_layout = QVBoxLayout()
+        frame_parse_manual_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_manual_layout.setSpacing(2)
+        ##
+        ### frame_parse_manual_header
+        self.frame_parse_manual_header = QFrame(self)
+        frame_parse_manual_header_layout = QHBoxLayout()
+        frame_parse_manual_header_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_manual_header_layout.setSpacing(4)
+        frame_parse_manual_header_layout.addWidget(self.data_parser_headers_label)
+        frame_parse_manual_header_layout.addWidget(self.data_parser_headers, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_manual_header.setLayout(frame_parse_manual_header_layout)
+        ###
+        ### frame_parse_manual_start
+        self.frame_parse_manual_start = QFrame(self)
+        frame_parse_manual_start_layout = QHBoxLayout()
+        frame_parse_manual_start_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_manual_start_layout.setSpacing(4)
+        frame_parse_manual_start_layout.addWidget(self.data_parser_headers_start_label)
+        frame_parse_manual_start_layout.addWidget(self.data_parser_headers_start_box, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_manual_start.setLayout(frame_parse_manual_start_layout)
+        ###
+        ### frame_parse_manual_end
+        self.frame_parse_manual_end = QFrame(self)
+        frame_parse_manual_end_layout = QHBoxLayout()
+        frame_parse_manual_end_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_manual_end_layout.setSpacing(4)
+        frame_parse_manual_end_layout.addWidget(self.data_parser_headers_end_label)
+        frame_parse_manual_end_layout.addWidget(self.data_parser_headers_end_box, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_manual_end.setLayout(frame_parse_manual_end_layout)
+        ###
+        ### frame_parse_manual_decimal
+        self.frame_parse_manual_decimal = QFrame(self)
+        frame_parse_manual_decimal_layout = QHBoxLayout()
+        frame_parse_manual_decimal_layout.setContentsMargins(0, 0, 0, 0)
+        frame_parse_manual_decimal_layout.setSpacing(4)
+        frame_parse_manual_decimal_layout.addWidget(self.data_parser_headers_decimal_label)
+        frame_parse_manual_decimal_layout.addWidget(self.data_parser_headers_decimal_box, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_manual_decimal.setLayout(frame_parse_manual_decimal_layout)
+        ##
+        ## add title, controls, and manual add button to the manual parse layout/frame, and then add the manual parse frame to the main parse layout/frame
+        frame_parse_manual_layout.addWidget(self.manual_parser_title)
+        frame_parse_manual_layout.addWidget(self.frame_parse_manual_header)
+        frame_parse_manual_layout.addWidget(self.frame_parse_manual_start)
+        frame_parse_manual_layout.addWidget(self.frame_parse_manual_end)
+        frame_parse_manual_layout.addWidget(self.frame_parse_manual_decimal)
+        frame_parse_manual_layout.addWidget(self.data_parser_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        self.frame_parse_manual.setLayout(frame_parse_manual_layout)
+        frame_parse_layout.addWidget(self.frame_parse_manual, alignment=Qt.AlignmentFlag.AlignTop)
+        ##
         #
-        # start column
-        frame_headers_layout_start = QFrame(self)
-        frame_headers_layout_start_layout = QVBoxLayout()
-        frame_headers_layout_start_layout.addWidget(self.data_parser_headers_start_label)
-        frame_headers_layout_start_layout.addWidget(self.data_parser_headers_start_box)
-        frame_headers_layout_start.setLayout(frame_headers_layout_start_layout)
-        #
-        # end column
-        frame_headers_layout_end = QFrame(self)
-        frame_headers_layout_end_layout = QVBoxLayout()
-        frame_headers_layout_end_layout.addWidget(self.data_parser_headers_end_label)
-        frame_headers_layout_end_layout.addWidget(self.data_parser_headers_end_box)
-        frame_headers_layout_end.setLayout(frame_headers_layout_end_layout)
-        #
-        # decimal column
-        frame_headers_layout_decimal = QFrame(self)
-        frame_headers_layout_decimal_layout = QVBoxLayout()
-        frame_headers_layout_decimal_layout.addWidget(self.data_parser_headers_decimal_label)
-        frame_headers_layout_decimal_layout.addWidget(self.data_parser_headers_decimal_box)
-        frame_headers_layout_decimal.setLayout(frame_headers_layout_decimal_layout)
-        #
-        # add all of those controls and their vertical layouts to the horizontal layout
-        frame_headers_controls_layout.addWidget(frame_headers_layout_dropdown)
-        frame_headers_controls_layout.addWidget(frame_headers_layout_start)
-        frame_headers_controls_layout.addWidget(frame_headers_layout_end)
-        frame_headers_controls_layout.addWidget(frame_headers_layout_decimal)
-        frame_headers_controls_layout.addStretch()
-        self.frame_headers_controls.setLayout(frame_headers_controls_layout)
-        main_layout.addWidget(self.frame_headers_controls)
+        self.frame_parse.setLayout(frame_parse_layout)
+        main_layout.addWidget(self.frame_parse)
 
 
         # frame_attribute_table holds attribute table
@@ -433,16 +490,11 @@ class SP1ImporterDialog(QMainWindow):
         # self.setCentralWidget(container)
         self.setCentralWidget(scroll_area)
 
-        
-    def update_import_type(self, import_type):
-        self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
-        self.frame_input_selector_upload.setVisible(import_type == "File upload")
+    #################
+    ### FUNCTIONS ###
+    #################
 
-    def select_file(self):
-        # grab the file name
-        fin = QFileDialog.getOpenFileName(self, "Open File", "", "SP1 files (*.sp1);;All Files (*)")
-        self.input_file_selector_line.setText(fin[0])
-
+    # Basic functions (not signals):
     # Define the method to calculate the number of header lines based on the header content definition type and value.
     def calculate_header(self):
         header_indicator_type = self.header_content_definition_type_dropdown.currentText()
@@ -458,6 +510,44 @@ class SP1ImporterDialog(QMainWindow):
         else:
             header_lines = int(self.header_content_definition_value_line.text())
         return header_lines
+
+    # Define a function to manage latitude and longitude value conversions
+    def lat_lon_naming(self, header, value):
+        '''`header`:
+            type: string. description: name of the data header associated with the value
+           `value`:
+            type: string. description: string of numerical values associated with the header
+           purpose:
+            function to convert latitude and longitude values with implicit decimal points and letter indicators to strings with decimal values.
+        '''
+        d = int(self.lat_lon_decimal_box.text())
+        if (header in lat_header_possibilities) and ('S' in value or 'N' in value):
+            if 'S' in value and '-' not in value:
+                val = f'-{value[:-1]}'
+            else:
+                val = value[:-1]
+            val = f'{val[:-d]}.{val[-d:]}'
+
+        if (header in lon_header_possibilities) and ('W' in value or 'E' in value):
+            if 'W' in value and '-' not in value:
+                val = f'-{value[:-1]}'
+            else:
+                val = value[:-1]
+            val = f'{val[:-d]}.{val[-d:]}'
+
+        return val
+
+    ##########
+    # Signals:
+    ##########
+    def update_import_type(self, import_type):
+        self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
+        self.frame_input_selector_upload.setVisible(import_type == "File upload")
+
+    def select_file(self):
+        # grab the file name
+        fin = QFileDialog.getOpenFileName(self, "Open File", "", "SP1 files (*.sp1);;All Files (*)")
+        self.input_file_selector_line.setText(fin[0])
 
     # Define the method/slot for when the input file (fin_button) is clicked (opens dialog box):
     def load_input_file(self):
@@ -530,6 +620,10 @@ class SP1ImporterDialog(QMainWindow):
                         data_header_start = data_header_range[0]
                         data_header_end = data_header_range[1]
                         data_header_val = line[data_header_start - 1:data_header_end]
+                        
+                        if data_header in lat_header_possibilities or data_header in lon_header_possibilities:
+                            data_header_val = self.lat_lon_naming(data_header, data_header_val)
+
                         file_dict[data_header].append(data_header_val)
 
         # loop through each header to find which are not blank. add those to the attribute table
@@ -545,8 +639,6 @@ class SP1ImporterDialog(QMainWindow):
                 self.data_attribute_table.setHorizontalHeaderItem(self.data_attribute_table.columnCount() - 1, QTableWidgetItem(key),)
                 for row_idx, value in enumerate(values_list):
                     self.data_attribute_table.setItem(row_idx, self.data_attribute_table.columnCount() - 1, QTableWidgetItem(value))
-
-            
 
     def update_data_parser_headers(self):
         self.data_parser_headers.clear()
@@ -830,6 +922,8 @@ class SP1ImporterDialog(QMainWindow):
                     for csv_data_row in csv_data_list_all:
                         writer.writerow(csv_data_row)
 
+
+
 class SP1Importer:
     def __init__(self, iface):
         self.iface = iface
@@ -879,3 +973,22 @@ seg_header_specs = {
                 'Reshoot code': [26, 26]
         }
 }
+
+possible_headers = [
+    'Line name',
+    'Shotpoint ID',
+    'Reshoot code',
+    'Latitude',
+    'Longitude',
+    'Easting',
+    'Northing',
+    'Elevation',
+    'Year',
+    'Day of year',
+    'Hours',
+    'Minutes',
+    'Seconds'
+]
+
+lat_header_possibilities = ['Latitude', 'Lat', 'LAT', 'latitude', 'lat']
+lon_header_possibilities = ['Longitude', 'Lon', 'LON', 'longitude', 'lon']
