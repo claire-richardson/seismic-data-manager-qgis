@@ -61,7 +61,7 @@ class SP1ImporterDialog(QMainWindow):
         self.import_type_label.setStyleSheet("font-size: 14px;")
         ## Widget: combo box for import type selection
         self.import_type_dropdown = QComboBox()
-        self.import_type_dropdown.addItems(["Map layer", "File upload"])
+        self.import_type_dropdown.addItems(["File upload", "Map layer"])
         #
         # map layer option widgets
         ## Widget: push button and labels to import from a map layer
@@ -75,11 +75,11 @@ class SP1ImporterDialog(QMainWindow):
         self.input_file_selector_line = QLineEdit(self)
         self.input_file_selector_button = QPushButton("Browse", self)
         ## Widgets: Header content definition
-        self.header_content_definition_title = QLabel("Provide header content information:")
-        self.header_content_definition_type_label = QLabel("Header content indicator type:")
+        self.header_content_definition_title = QLabel("Provide file header content information:")
+        self.header_content_definition_type_label = QLabel("File header content indicator type:")
         self.header_content_definition_type_dropdown = QComboBox()
         self.header_content_definition_type_dropdown.addItems(["Symbol/Letter", "Lines to skip"])
-        self.header_content_definition_value_label = QLabel("Header content indicator (symbol, letter, or number of lines to skip):")
+        self.header_content_definition_value_label = QLabel("File header content indicator (symbol, letter, or lines to skip):")
         self.header_content_definition_value_line = QLineEdit(self)
         self.header_content_definition_load_button = QPushButton("Load file", self)
 
@@ -96,9 +96,9 @@ class SP1ImporterDialog(QMainWindow):
         
         # Header display
         ## Widget: Labels for the header material box
-        self.header_label = QLabel("Header content:")
+        self.header_label = QLabel("File header content:")
         self.header_label.setStyleSheet("font-weight: bold; font-size: 16px;")
-        self.header_doc_label = QLabel("Use the text box below to review and edit header content if necessary. Any changes made here will be retained in the final output .sp1 file. Note that SEG Specifications require exactly 20 lines of header content, each starting with 'H'.")
+        self.header_doc_label = QLabel("Use the text box below to review and edit file header content if necessary. Any changes made here will be retained in the final output file. Note that SEG specifications require exactly 20 lines of header content per header block, each starting with 'H'.")
         self.header_doc_label.setStyleSheet("font-size: 14px;")
         self.header_doc_label.setWordWrap(True)
         ## Widget: Text box to display the header material
@@ -120,13 +120,14 @@ class SP1ImporterDialog(QMainWindow):
         ## Widget: Label for the data parser section
         self.data_parser_title = QLabel("Data parser:")
         self.data_parser_title.setStyleSheet("font-weight: bold; font-size: 16px;")
-        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the headers listed in the desired SEG specification." \
-        "Use the auto-parse dropdown menu and button to select the specification and automatically assign headers and columns." \
-        "If an automatically assigned column is incorrect in the attribute table, or includes an implicit decimal point, remove it using the `remove column` button and assign it manually using the text boxes below. If a header is empty/unnecessary, it can be removed the same way.\n\n" \
-        "To manually assign a header and corresponding data:\n" \
-        "-  For a given header, identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n"
-        "-  If the values for a given header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\n\n" \
-        "Note that not all headers in the dropdown need to be used. The included headers are those listed in the supported SEG specifications. Besides the introductory/primary header content, which is handled in the top left box above, only the information passed through the parser is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored, and the order of the headers in the attribute table does not need to correspond to the order in the specification.")
+        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the data headers listed in the desired SEG specification." \
+        "Use the auto-parse dropdown menu and button to select the specification and automatically assign data headers and columns." \
+        "If an automatically assigned column is incorrect in the attribute table, or includes an implicit decimal point, remove it using the `remove column` button and assign it manually using the text boxes below. If a data header is empty/unnecessary, it can be removed the same way.\n\n" \
+        "To manually assign a data header and corresponding data:\n" \
+        "-  For a given data header, identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n"
+        "-  If the values for a given data header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\n\n" \
+        "Note that not all data headers in the dropdown need to be used. The included data headers are those listed in the supported SEG specifications." \
+        "Besides the primary file header content, which is handled in the top left box above, only the information passed through the parser is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored, and the order of the data headers in the attribute table does not need to correspond to the order in the specification.")
         self.data_parser_label.setWordWrap(True)
         self.data_parser_label.setStyleSheet("font-size: 14px;")
         ## Widget: Table for parsing input
@@ -244,7 +245,7 @@ class SP1ImporterDialog(QMainWindow):
         # 
         # subframe for adding a map layer
         self.frame_input_selector_map_layer = QFrame(self)
-        self.frame_input_selector_map_layer.setVisible(True)
+        self.frame_input_selector_map_layer.setVisible(False)
         frame_input_selector_map_layer_layout = QHBoxLayout()
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_button)
         frame_input_selector_map_layer_layout.addWidget(self.map_layer_import_name_label)
@@ -254,7 +255,7 @@ class SP1ImporterDialog(QMainWindow):
         # v
         # subframe for upload file selector controls
         self.frame_input_selector_upload = QFrame(self)
-        self.frame_input_selector_upload.setVisible(False)
+        self.frame_input_selector_upload.setVisible(True)
         frame_input_selector_upload_layout = QVBoxLayout()
         # 
         # sub subframe for input file selector dialog box
@@ -286,6 +287,7 @@ class SP1ImporterDialog(QMainWindow):
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_type_def)
         frame_input_selector_upload_layout.addWidget(frame_input_selector_upload_header_value_def)
         frame_input_selector_upload_layout.addWidget(self.header_content_definition_load_button, alignment = Qt.AlignmentFlag.AlignLeft)
+        frame_input_selector_upload_layout.setSpacing(0)
         self.frame_input_selector_upload.setLayout(frame_input_selector_upload_layout)
         # ^
         #
@@ -420,8 +422,6 @@ class SP1ImporterDialog(QMainWindow):
         self.frame_out.setLayout(frame_out_layout)
         main_layout.addWidget(self.frame_out)
         
-        
-        
         # Add all frames to the main layout
         container = QWidget()
         scroll_area = QScrollArea()
@@ -430,6 +430,7 @@ class SP1ImporterDialog(QMainWindow):
         container.setLayout(main_layout)
         # self.setCentralWidget(container)
         self.setCentralWidget(scroll_area)
+
         
     def update_import_type(self, import_type):
         self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
@@ -440,15 +441,26 @@ class SP1ImporterDialog(QMainWindow):
         fin = QFileDialog.getOpenFileName(self, "Open File", "", "SP1 files (*.sp1);;All Files (*)")
         self.input_file_selector_line.setText(fin[0])
 
+    # Define the method to calculate the number of header lines based on the header content definition type and value.
+    def calculate_header(self):
+        header_indicator_type = self.header_content_definition_type_dropdown.currentText()
+        header_lines = 0
+        if header_indicator_type == "Symbol/Letter":
+            header_indicator = str(self.header_content_definition_value_line.text())
+            with open(self.input_file_selector_line.text(), "r") as input_file:
+                for line in input_file:
+                    if line[0] == header_indicator:
+                        header_lines += 1
+                    else:
+                        break
+        else:
+            header_lines = int(self.header_content_definition_value_line.text())
+        return header_lines
+
     # Define the method/slot for when the input file (fin_button) is clicked (opens dialog box):
     def load_input_file(self):
         # first, get the file header content information
-        header_indicator_type = self.header_content_definition_type_dropdown.currentText()
-
-        if header_indicator_type == "Symbol/Letter":
-            header_indicator = str(self.header_content_definition_value_line.text())
-        elif header_indicator_type == "Lines to skip":
-            header_indicator = int(self.header_content_definition_value_line.text())
+        header_lines = self.calculate_header()
 
         input_file_path = self.input_file_selector_line.text()
 
@@ -466,7 +478,7 @@ class SP1ImporterDialog(QMainWindow):
                 for line in input_file_lines:
 
                     # First, if the line is a header line, print it in the header preview text box.
-                    if (header_indicator_type == "Symbol/Letter" and line[0] == header_indicator) or (header_indicator_type == "Lines to skip" and header_line_no < header_indicator):
+                    if header_line_no < header_lines:
                         self.header_text.insertPlainText(f"{header_line_no + 1} {line}")
                         header_line_no += 1
 
@@ -489,8 +501,50 @@ class SP1ImporterDialog(QMainWindow):
         else:
             return
 
+    # define a function to autoparse the input file based on SEG specs
     def autoparse(self):
-        return
+        # count the number of lines to skip from the file header
+        header_lines = self.calculate_header()
+
+        line_idx = 1
+
+        # define a dictionary to hold the data from the table
+        file_dict = {header: [] for header in seg_header_specs[self.seg_spec_dropdown.currentText()]}
+
+        # open the original file and iterate through
+        with open(self.input_file_selector_line.text(), "r") as fin:
+            lines = fin.readlines()
+            for line in lines:
+
+                # skip file header content lines
+                if line_idx <= header_lines:
+                    line_idx += 1
+                    continue
+
+                # get the values for each of the headers for each line
+                else:
+                    for data_header in list(seg_header_specs[self.seg_spec_dropdown.currentText()]):
+                        data_header_range = seg_header_specs[self.seg_spec_dropdown.currentText()][data_header]
+                        data_header_start = data_header_range[0]
+                        data_header_end = data_header_range[1]
+                        data_header_val = line[data_header_start - 1:data_header_end]
+                        file_dict[data_header].append(data_header_val)
+
+        # loop through each header to find which are not blank. add those to the attribute table
+        for key in file_dict:
+            values_list = file_dict.get(key)
+            
+            # Returns True if all items are blank or whitespace
+            are_all_blank = all(not val.strip() for val in values_list)
+
+            # if all values are not blank, then add them to the attribute table
+            if are_all_blank == False:
+                self.data_attribute_table.insertColumn(self.data_attribute_table.columnCount())
+                self.data_attribute_table.setHorizontalHeaderItem(self.data_attribute_table.columnCount() - 1, QTableWidgetItem(key),)
+                for row_idx, value in enumerate(values_list):
+                    self.data_attribute_table.setItem(row_idx, self.data_attribute_table.columnCount() - 1, QTableWidgetItem(value))
+
+            
 
     def update_data_parser_headers(self):
         self.data_parser_headers.clear()
@@ -521,7 +575,7 @@ class SP1ImporterDialog(QMainWindow):
         # determine whether there are indices to ignore, and where they are
         column_index = self.data_attribute_table.columnCount()
 
-        # scan the input data file to retain just the data, dropping the header content
+        # scan the input data file to retain just the data, dropping the file header content
         data_lines = []
         with open(self.input_file_selector_line.text(), 'r') as fin:
             input_lines = fin.readlines()
@@ -800,22 +854,6 @@ class SP1Importer:
         self.dialog.show()
         self.dialog.raise_()
         self.dialog.activateWindow()
-
-# seg_header_specs = {
-#     'Line name': [2, 17],
-#     'Shotpoint ID': [18, 25],
-#     'Reshoot code': [26, 26],
-#     'Latitude': [27, 35],
-#     'Longitude': [36, 45],
-#     'Easting': [46, 53],
-#     'Northing': [54, 61],
-#     'Elevation': [62, 66],
-#     'Year': [67, 68],
-#     'Day of year': [69, 71],
-#     'Hours': [72, 73],
-#     'Minutes': [74, 75],
-#     'Seconds': [76, 77]
-# }
 
 seg_header_specs = {
         'SP1': {
