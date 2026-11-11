@@ -1,4 +1,4 @@
-from .main import SP1Importer
+from .main import SeismicManager
 
 def classFactory(iface):
-    return SP1Importer(iface)
+    return SeismicManager(iface)
