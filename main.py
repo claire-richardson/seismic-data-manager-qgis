@@ -47,9 +47,11 @@ class SP1ImporterDialog(QMainWindow):
         #############
         # ADD WIDGETS
         #############
-        self.window_title = QLabel("SP1 file importer and parser")
+        self.window_title = QLabel("Seismic positioning data file importer and parser")
         self.window_title.setStyleSheet("font-weight: bold; font-size: 24px;")
-        self.window_title_label = QLabel("Developed by Claire Richardson (crricha5@asu.edu)\n")
+        self.window_title_label = QLabel("For SEG positioning file formats, including:\n" \
+                                         "- SP1\n" \
+                                         "Developed by Claire Richardson (crricha5@asu.edu)\n")
         self.window_title_label.setStyleSheet("font-size: 16px;")
         
         # Input file selector
