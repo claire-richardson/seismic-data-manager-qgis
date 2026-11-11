@@ -1,6 +1,6 @@
 [general]
-name=SP1 Importer
-description=This plugin imports, parses, plots, and exports seismic positioning data files according to SEG specifications, including SP1 (*.sp1)
+name=Seismic Data Manager
+description=This plugin imports, parses, plots, and exports seismic positioning data files according to SEG specifications, including SP1 (*.sp1) and SPS (*.sps, *.rps)
 version=1.1
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
