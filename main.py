@@ -47,20 +47,20 @@ class SeismicManagerDialog(QMainWindow):
         #############
         # ADD WIDGETS
         #############
-        self.window_title = QLabel("Seismic positioning data file importer and parser")
-        self.window_title.setStyleSheet("font-weight: bold; font-size: 24px;")
+        self.window_title = QLabel("Seismic positioning data manager")
+        self.window_title.setStyleSheet("font-weight: bold; font-size: 22px;")
         self.window_title_label = QLabel(
-            "This plugin offers an interface and functionality to import, parse, and export seismic positioning data according to specifications from the Society of Exploration Geophysicists (SEG), either from an uploaded file or directly from a map layer in QGIS.<br>" \
+            "This plugin offers an interface and functionality to import, parse, and export seismic positioning data according to specifications from the Society of Exploration Geophysicists (SEG).<br><br>" \
             "Currently supported formats include:<br>" \
             "- SEG P1 (.sp1)<br>" \
-            "- SPS (.sps, .rps)<br>" \
+            "- SPS (.sps, .rps)<br><br>" \
             "Find SEG specification information here: <a href=\"https://seg.org/publications/seg-technical-standards/\">SEG Technical Standards</a>"
         )
         self.window_title_label.setTextFormat(Qt.TextFormat.RichText)
         self.window_title_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
         self.window_title_label.setOpenExternalLinks(True)
         self.window_title_label.setWordWrap(True)
-        self.window_title_label.setStyleSheet("font-size: 16px;")
+        self.window_title_label.setStyleSheet("font-size: 14px;")
         
         # Input file selector
         ## Widget: Label for input file selector
@@ -131,14 +131,11 @@ class SeismicManagerDialog(QMainWindow):
         ## Widget: Label for the data parser section
         self.data_parser_title = QLabel("Data parser:")
         self.data_parser_title.setStyleSheet("font-weight: bold; font-size: 16px;")
-        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the data headers listed in the desired SEG file type specification." \
-        "Use the Auto-parse section to select the specification and automatically assign data headers and columns. If there is an implicit decimal in the Latitude and Longitude fields, indicate the number of decimal places there are in the provided box." \
-        "If an automatically assigned column populats incorrectly in the attribute table, remove it using the `Remove column` button and assign it manually using the Manual parse controls.\n\n" \
+        self.data_parser_label = QLabel("Use this table and the controls below to parse the input file into the data headers listed in the desired SEG file type specification. Use the Auto-parse section to select the specification and automatically assign data headers and columns. If there is an implicit decimal in the Latitude and Longitude fields, indicate the number of decimal places there are in the provided box. If an automatically assigned column populats incorrectly in the attribute table, remove it using the `Remove column` button and assign it manually using the Manual parse controls.\n\n" \
         "Use the Manual parse controls to manually assign a data header and corresponding data:\n" \
         "-  For a given data header, identify the column numbers where the values start and end. You can do this by simply highlighting the relevant columns and clicking 'Add header and data', or by manually entering the values.\n"
         "-  If the values for a given data header include an implicit decimal point, provide the column number of the ones place (i.e., the value that should appear directly to the left of the decimal point).\n\n" \
-        "The data headers in the dropdown box are possible headers from all supported SEG specifications." \
-        "Besides the primary file header content, which is handled in the top left box above, only the data passed through the parser and populated in the attribute table is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored.\n"
+        "The data headers in the dropdown box are possible headers from all supported SEG specifications. Besides the primary file header content, which is handled in the top left box above, only the data passed through the parser and populated in the attribute table is retained and used to make the final outputs. Thus, anything unassigned (e.g., whitespace) will be ignored.\n\n"
         "Note that the order of the data headers in the attribute table does not need to correspond to the order in the specification.\n")
         self.data_parser_label.setWordWrap(True)
         self.data_parser_label.setStyleSheet("font-size: 14px;")
@@ -218,7 +215,8 @@ class SeismicManagerDialog(QMainWindow):
         # DEFINE WIDGET SIGNALS
         #######################
         ## signal for when the import type is selected
-        self.import_type_dropdown.currentTextChanged.connect(self.update_import_type)
+## uncomment when there is more information about adding directly from a map layer
+        # self.import_type_dropdown.currentTextChanged.connect(self.update_import_type)
 
         ## signal for when the input file browser button is clicked (activate method/slot .load_input_file)
         self.input_file_selector_button.clicked.connect(self.select_file)
@@ -267,13 +265,14 @@ class SeismicManagerDialog(QMainWindow):
         frame_input_selector_layout.setContentsMargins(20, 0, 0, 0)
         #
         # subframe for selecting import type
-        frame_input_selector_import_type = QFrame(self)
-        frame_input_selector_import_type_layout = QHBoxLayout()
-        frame_input_selector_import_type_layout.setContentsMargins(0, 0, 0, 0)
-        frame_input_selector_import_type_layout.addWidget(self.import_type_label)
-        frame_input_selector_import_type_layout.addWidget(self.import_type_dropdown)
-        frame_input_selector_import_type_layout.addStretch()
-        frame_input_selector_import_type.setLayout(frame_input_selector_import_type_layout)
+## uncomment all of the following block when there is more information about adding directly from a map layer
+        # frame_input_selector_import_type = QFrame(self)
+        # frame_input_selector_import_type_layout = QHBoxLayout()
+        # frame_input_selector_import_type_layout.setContentsMargins(0, 0, 0, 0)
+        # frame_input_selector_import_type_layout.addWidget(self.import_type_label)
+        # frame_input_selector_import_type_layout.addWidget(self.import_type_dropdown)
+        # frame_input_selector_import_type_layout.addStretch()
+        # frame_input_selector_import_type.setLayout(frame_input_selector_import_type_layout)
         # 
         # subframe for adding a map layer
         self.frame_input_selector_map_layer = QFrame(self)
@@ -333,7 +332,7 @@ class SeismicManagerDialog(QMainWindow):
         # ^
         #
         frame_input_selector_layout.addWidget(self.input_file_label)
-        frame_input_selector_layout.addWidget(frame_input_selector_import_type)
+##        # frame_input_selector_layout.addWidget(frame_input_selector_import_type) ## uncomment when there is more information about adding directly from a map layer
         frame_input_selector_layout.addWidget(self.frame_input_selector_map_layer, alignment=Qt.AlignmentFlag.AlignTop)
         frame_input_selector_layout.addWidget(self.frame_input_selector_upload, alignment=Qt.AlignmentFlag.AlignTop)
         self.frame_input_selector.setLayout(frame_input_selector_layout)
@@ -564,9 +563,10 @@ class SeismicManagerDialog(QMainWindow):
     ##########
     # Signals:
     ##########
-    def update_import_type(self, import_type):
-        self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
-        self.frame_input_selector_upload.setVisible(import_type == "File upload")
+## Uncomment when there is more information about adding directly from a map layer
+    # def update_import_type(self, import_type):
+        # self.frame_input_selector_map_layer.setVisible(import_type == "Map layer")
+        # self.frame_input_selector_upload.setVisible(import_type == "File upload")
 
     def select_file(self):
         # grab the file name
